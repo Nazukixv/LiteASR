@@ -1,0 +1,82 @@
+"""Initialize sub package."""
+
+import importlib
+import os
+
+from hydra.core.config_store import ConfigStore
+
+# from liteasr import criterions
+# from liteasr.criterions import BaseLiteasrCriterion
+from liteasr import models
+from liteasr.models import LiteasrModel
+from liteasr import optims
+from liteasr.optims import LiteasrOptimizer
+from liteasr.config import LiteasrDataclass
+
+# register dataclass
+TASK_DATACLASS_REGISTRY = {}
+TASK_REGISTRY = {}
+TASK_CLASS_NAMES = set()
+
+
+class LiteasrTask(object):
+
+    def __init__(self):
+        self.data = []
+        self.dataset = None
+
+    def load_data(self):
+        raise NotImplementedError
+
+    def build_model(self, cfg) -> LiteasrModel:
+        model = models.build_model(cfg, self)
+        return model
+
+    def build_optimizer(self, params, cfg) -> LiteasrOptimizer:
+        optimizer = optims.build_optimizer(params, cfg, self)
+        return optimizer
+
+    def __repr__(self):
+        format_string = self.__class__.__name__ + ' ('
+        for key in sorted(self.__dict__.keys()):
+            format_string += '\n'
+            format_string += '  ' + key + ': ' + str(self.__dict__[key])
+        format_string += '\n)'
+        return format_string
+
+
+def setup_task(cfg: LiteasrDataclass) -> LiteasrTask:
+    task_name = getattr(cfg, "name", None)
+    task = TASK_REGISTRY[task_name]
+    return task(cfg)
+
+
+def register_task(name, dataclass=None):
+    def register_task_cls(cls):
+        TASK_REGISTRY[name] = cls
+        TASK_CLASS_NAMES.add(cls.__name__)
+
+        if dataclass is not None:
+            assert issubclass(dataclass, LiteasrDataclass)
+            TASK_DATACLASS_REGISTRY[name] = dataclass
+            cs = ConfigStore.instance()
+            node = dataclass()
+            node._name = name
+            cs.store(name=name, group="task", node=node)
+
+        return cls
+
+    return register_task_cls
+
+
+# automatically import any Python files in the tasks/ directory
+tasks_dir = os.path.dirname(__file__)
+for file in os.listdir(tasks_dir):
+    path = os.path.join(tasks_dir, file)
+    if (
+        not file.startswith("_")
+        and not file.startswith(".")
+        and (file.endswith(".py") or os.path.isdir(path))
+    ):
+        task_name = file[: file.find(".py")] if file.endswith(".py") else file
+        module = importlib.import_module("liteasr.tasks." + task_name)
