@@ -5,8 +5,8 @@ import os
 
 from hydra.core.config_store import ConfigStore
 
-# from liteasr import criterions
-# from liteasr.criterions import BaseLiteasrCriterion
+from liteasr import criterions
+from liteasr.criterions import LiteasrLoss
 from liteasr import models
 from liteasr.models import LiteasrModel
 from liteasr import optims
@@ -35,6 +35,10 @@ class LiteasrTask(object):
     def build_optimizer(self, params, cfg) -> LiteasrOptimizer:
         optimizer = optims.build_optimizer(params, cfg, self)
         return optimizer
+
+    def build_criterion(self, cfg) -> LiteasrLoss:
+        criterion = criterions.build_criterion(cfg, self)
+        return criterion
 
     def __repr__(self):
         format_string = self.__class__.__name__ + ' ('
