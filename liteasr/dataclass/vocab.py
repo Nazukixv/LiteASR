@@ -1,4 +1,4 @@
-from typing import Iterable, Any
+from typing import Any, Iterable
 
 
 class Vocab(object):
@@ -45,10 +45,9 @@ class Vocab(object):
 
     @property
     def valid(self) -> bool:
-        return all([
-            self.id2token[self.token2id[t]] == t
-            for t in self.token2id
-        ])
+        return all(
+            [self.id2token[self.token2id[t]] == t for t in self.token2id]
+        )
 
     def __getitem__(self, index):
         if isinstance(index, str):

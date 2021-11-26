@@ -1,7 +1,9 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from dataclasses import field
 
 from liteasr.optims import register_optimzer
-from liteasr.optims.adam import Adam, AdamConfig
+from liteasr.optims.adam import Adam
+from liteasr.optims.adam import AdamConfig
 
 
 @dataclass
@@ -35,9 +37,8 @@ class Noam(Adam):
 
     def rate(self):
         return (
-            self.factor
-            * self.model_dim ** (-0.5)
-            * min(self._step ** (-0.5), self._step * self.warmup ** (-1.5))
+            self.factor * self.model_dim**(-0.5)
+            * min(self._step**(-0.5), self._step * self.warmup**(-1.5))
         )
 
     @classmethod

@@ -1,6 +1,7 @@
 """RNNT loss."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from dataclasses import field
 
 import torch
 from torch import cuda

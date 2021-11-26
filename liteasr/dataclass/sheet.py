@@ -1,5 +1,4 @@
 from liteasr.dataclass.vocab import Vocab
-
 from liteasr.utils.kaldiio import load_mat
 
 

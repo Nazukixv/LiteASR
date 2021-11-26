@@ -9,13 +9,12 @@ import torch.nn as nn
 
 from liteasr.config import LiteasrDataclass
 
-
-MODEL_REGISTRY = {}            # model_name -> model_cls
-MODEL_DATACLASS_REGISTRY = {}  #
-ARCH_MODEL_REGISTRY = {}       # arch_name  -> model_cls
+MODEL_REGISTRY = {}  # model_name -> model_cls
+MODEL_DATACLASS_REGISTRY = {}
+ARCH_MODEL_REGISTRY = {}  # arch_name  -> model_cls
 ARCH_MODEL_NAME_REGISTRY = {}  # arch_name  -> model_name
-ARCH_MODEL_INV_REGISTRY = {}   # model_name -> [arch_name]
-ARCH_CONFIG_REGISTRY = {}      # arch_name  -> arch_fn
+ARCH_MODEL_INV_REGISTRY = {}  # model_name -> [arch_name]
+ARCH_CONFIG_REGISTRY = {}  # arch_name  -> arch_fn
 
 
 class LiteasrModel(nn.Module):
@@ -76,9 +75,8 @@ models_dir = os.path.dirname(__file__)
 for file in os.listdir(models_dir):
     path = os.path.join(models_dir, file)
     if (
-        not file.startswith("_")
-        and not file.startswith(".")
+        not file.startswith("_") and not file.startswith(".")
         and (file.endswith(".py") or os.path.isdir(path))
     ):
-        model_name = file[: file.find(".py")] if file.endswith(".py") else file
+        model_name = file[:file.find(".py")] if file.endswith(".py") else file
         module = importlib.import_module("liteasr.models." + model_name)

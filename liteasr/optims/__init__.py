@@ -8,7 +8,6 @@ from omegaconf import OmegaConf
 
 from liteasr.config import LiteasrDataclass
 
-
 OPTIMIZER_REGISTRY = {}
 OPTIMIZER_DATACLASS_REGISTRY = {}
 OPTIMIZER_CLASS_NAMES = set()
@@ -96,9 +95,8 @@ optims_dir = os.path.dirname(__file__)
 for file in os.listdir(optims_dir):
     path = os.path.join(optims_dir, file)
     if (
-        not file.startswith("_")
-        and not file.startswith(".")
+        not file.startswith("_") and not file.startswith(".")
         and (file.endswith(".py") or os.path.isdir(path))
     ):
-        optim_name = file[: file.find(".py")] if file.endswith(".py") else file
+        optim_name = file[:file.find(".py")] if file.endswith(".py") else file
         module = importlib.import_module("liteasr.optims." + optim_name)

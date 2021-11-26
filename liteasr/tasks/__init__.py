@@ -6,12 +6,12 @@ import os
 from hydra.core.config_store import ConfigStore
 
 from liteasr import criterions
-from liteasr.criterions import LiteasrLoss
 from liteasr import models
-from liteasr.models import LiteasrModel
 from liteasr import optims
-from liteasr.optims import LiteasrOptimizer
 from liteasr.config import LiteasrDataclass
+from liteasr.criterions import LiteasrLoss
+from liteasr.models import LiteasrModel
+from liteasr.optims import LiteasrOptimizer
 
 # register dataclass
 TASK_DATACLASS_REGISTRY = {}
@@ -56,6 +56,7 @@ def setup_task(cfg: LiteasrDataclass) -> LiteasrTask:
 
 
 def register_task(name, dataclass=None):
+
     def register_task_cls(cls):
         TASK_REGISTRY[name] = cls
         TASK_CLASS_NAMES.add(cls.__name__)
@@ -78,9 +79,8 @@ tasks_dir = os.path.dirname(__file__)
 for file in os.listdir(tasks_dir):
     path = os.path.join(tasks_dir, file)
     if (
-        not file.startswith("_")
-        and not file.startswith(".")
+        not file.startswith("_") and not file.startswith(".")
         and (file.endswith(".py") or os.path.isdir(path))
     ):
-        task_name = file[: file.find(".py")] if file.endswith(".py") else file
+        task_name = file[:file.find(".py")] if file.endswith(".py") else file
         module = importlib.import_module("liteasr.tasks." + task_name)

@@ -1,9 +1,8 @@
-from typing import Optional
-from typing import Tuple
+from typing import Optional, Tuple
 
 import torch
-import torch.nn as nn
 from torch import Tensor
+import torch.nn as nn
 
 
 class MultiHeadAttention(nn.Module):
@@ -17,7 +16,7 @@ class MultiHeadAttention(nn.Module):
         super().__init__()
         assert input_dim % n_head == 0
         self.d_k = input_dim // n_head
-        self.scaling = self.d_k ** -0.5
+        self.scaling = self.d_k**-0.5
         self.h = n_head
         self.linear_q = nn.Linear(input_dim, input_dim)
         self.linear_k = nn.Linear(input_dim, input_dim)

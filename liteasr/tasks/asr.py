@@ -1,16 +1,16 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from dataclasses import field
 from typing import Optional
 
 from omegaconf import MISSING
 
 from liteasr.config import LiteasrDataclass
-
-from liteasr.tasks import register_task
-from liteasr.tasks import LiteasrTask
-
 from liteasr.dataclass.audio_data import Audio
-from liteasr.dataclass.sheet import AudioSheet, TextSheet
+from liteasr.dataclass.sheet import AudioSheet
+from liteasr.dataclass.sheet import TextSheet
 from liteasr.dataclass.vocab import Vocab
+from liteasr.tasks import LiteasrTask
+from liteasr.tasks import register_task
 
 
 @dataclass
@@ -44,7 +44,8 @@ class ASRTask(LiteasrTask):
         batch_num, batch_size = 0, 20
         while batch_num * batch_size < len(data):
             self.data.append(
-                data[batch_num * batch_size:(batch_num + 1) * batch_size])
+                data[batch_num * batch_size:(batch_num + 1) * batch_size]
+            )
             batch_num += 1
 
         from liteasr.utils.dataset import AudioFileDataset

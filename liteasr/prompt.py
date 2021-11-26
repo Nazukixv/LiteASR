@@ -9,8 +9,9 @@ from liteasr.tasks import TASK_DATACLASS_REGISTRY
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('option', type=str,
-                        help='<group>.<option> e.g. task.asr')
+    parser.add_argument(
+        'option', type=str, help='<group>.<option> e.g. task.asr'
+    )
 
     args = parser.parse_args()
     group, option = args.option.split('.')

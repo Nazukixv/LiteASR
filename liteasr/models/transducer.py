@@ -1,11 +1,11 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from dataclasses import field
 
 import torch.nn as nn
 
 from liteasr.config import LiteasrDataclass
 from liteasr.models import LiteasrModel
 from liteasr.models import register_model
-
 from liteasr.nets.attention import MultiHeadAttention
 from liteasr.nets.feed_forward import PositionwiseFeedForward
 from liteasr.nets.transformer_layer import EncoderLayer
@@ -24,14 +24,16 @@ class Transducer(LiteasrModel):
     def __init__(self, cfg: TransducerConfig, task=None):
         super().__init__()
         self.lin = nn.Linear(83, 256)
-        self.encoder = nn.ModuleList([
-            EncoderLayer(
-                size=256,
-                self_attn=MultiHeadAttention(4, 256, 0.1),
-                feed_forward=PositionwiseFeedForward(256, 1024, 0.1),
-                dropout_rate=0.1
-            ) for n in range(cfg.elayers)
-        ])
+        self.encoder = nn.ModuleList(
+            [
+                EncoderLayer(
+                    size=256,
+                    self_attn=MultiHeadAttention(4, 256, 0.1),
+                    feed_forward=PositionwiseFeedForward(256, 1024, 0.1),
+                    dropout_rate=0.1
+                ) for n in range(cfg.elayers)
+            ]
+        )
 
     def forward(self, x):
         x = self.lin(x)

@@ -18,7 +18,7 @@ class LayerNorm(nn.LayerNorm):
                 self.normalized_shape,
                 self.weight,
                 self.bias,
-                self.eps
+                self.eps,
             )
         else:
             return F.layer_norm(
@@ -26,7 +26,7 @@ class LayerNorm(nn.LayerNorm):
                 self.normalized_shape,
                 self.weight,
                 self.bias,
-                self.eps
+                self.eps,
             ).transpose(1, -1)
 
 

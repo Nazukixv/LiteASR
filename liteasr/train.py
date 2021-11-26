@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import hydra
-
-from omegaconf import OmegaConf
 import torch
 
 from liteasr import tasks
