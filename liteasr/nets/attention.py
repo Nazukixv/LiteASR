@@ -52,7 +52,7 @@ class MultiHeadAttention(nn.Module):
     ) -> Tensor:
         batch = value.size(0)
         if mask is not None:
-            scores = scores.masked_fill(mask, -1e50)
+            scores = scores.masked_fill(mask, -1e38)
         attn = self.dropout(self.softmax(scores))
         x = torch.matmul(attn, value)
         x = x.transpose(1, 2).contiguous().view(batch, -1, self.h * self.d_k)
