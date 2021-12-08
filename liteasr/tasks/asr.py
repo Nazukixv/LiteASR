@@ -9,6 +9,7 @@ from liteasr.dataclass.audio_data import Audio
 from liteasr.dataclass.sheet import AudioSheet
 from liteasr.dataclass.sheet import TextSheet
 from liteasr.dataclass.vocab import Vocab
+from liteasr.models import LiteasrModel
 from liteasr.tasks import LiteasrTask
 from liteasr.tasks import register_task
 
@@ -31,6 +32,11 @@ class ASRTask(LiteasrTask):
         self.vocab = Vocab(cfg.vocab)
         self.text = cfg.text
 
+    def build_model(self, cfg):
+        cfg.vocab_size = len(self.vocab)
+        cfg.input_dim = self.data[0][0].shape[-1]
+        return super().build_model(cfg)
+
     def load_data(self):
         data = []
         audio_sheet = AudioSheet(self.scp, self.segments)
@@ -50,3 +56,8 @@ class ASRTask(LiteasrTask):
 
         from liteasr.utils.dataset import AudioFileDataset
         self.dataset = AudioFileDataset(self.data)
+
+    def inference(self, x, model: LiteasrModel):
+        tokenids = model.inference(x)
+        tokens = self.vocab.lookup(tokenids)
+        return ''.join(tokens[1:])

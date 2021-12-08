@@ -28,6 +28,9 @@ class LiteasrTask(object):
     def load_data(self):
         raise NotImplementedError
 
+    def inference(self, x, model: LiteasrModel):
+        raise NotImplementedError
+
     def build_model(self, cfg) -> LiteasrModel:
         model = models.build_model(cfg, self)
         return model
