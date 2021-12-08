@@ -25,6 +25,9 @@ class LiteasrModel(nn.Module):
     def build_model(cls, cfg, task):
         raise NotImplementedError
 
+    def inference(self, x):
+        raise NotImplementedError
+
     def get_pred_len(self, xlens):
         raise NotImplementedError
 

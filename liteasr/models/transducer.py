@@ -2,10 +2,13 @@
 
 from dataclasses import dataclass
 from dataclasses import field
+from typing import List
 
 from omegaconf import II
 import torch
+from torch import Tensor
 import torch.nn as nn
+import torch.nn.functional as F
 
 from liteasr.config import LiteasrDataclass
 from liteasr.models import LiteasrModel
@@ -13,6 +16,23 @@ from liteasr.models import register_model
 from liteasr.nets.rnn_decoder import RNNDecoder
 from liteasr.nets.transformer_encoder import TransformerEncoder
 from liteasr.utils.mask import padding_mask
+
+
+class Hypothesis(object):
+
+    def __init__(
+        self,
+        score: float,
+        yseq: List[int],
+        str_yseq: str,
+        state_h: List[Tensor],
+        state_c: List[Tensor],
+    ):
+        self.score = score
+        self.yseq = yseq
+        self.str_yseq = str_yseq
+        self.state_h = state_h
+        self.state_c = state_c
 
 
 @dataclass
@@ -80,6 +100,80 @@ class Transducer(LiteasrModel):
         h_dec = self.decoder(ys).unsqueeze(1)
         h_jnt = self.joint(h_enc, h_dec)
         return h_jnt
+
+    def inference(self, x):
+        # implement beam search
+        h = self.encoder(x)  # (1, time, 83) -> (1, frame, 256)
+        state_h, state_c = self.decoder.init_state(h)
+        blank_tensor = torch.zeros(1, dtype=torch.long, device=h.device)
+        cache = {}
+        init_hyp = Hypothesis(0.0, [0], "0", state_h, state_c)
+        kept_hyps: List[Hypothesis] = [init_hyp]
+        hyps: List[Hypothesis] = []
+
+        for i, hi in enumerate(h[0]):
+            hyps = kept_hyps
+            kept_hyps = []
+
+            while True:
+                hyp_max = max(hyps, key=lambda hyp: hyp.score)
+                hyps.remove(hyp_max)
+
+                if hyp_max.str_yseq in cache:
+                    y, state_h, state_c = cache[hyp_max.str_yseq]
+                else:
+                    token = torch.full(
+                        (1, 1),
+                        hyp_max.yseq[-1],
+                        dtype=torch.long,
+                        device=h.device
+                    )
+                    token_embed = self.decoder.embed(token)
+                    y, state_h, state_c = self.decoder.rnn_forward(
+                        token_embed[:, 0, :], hyp_max.state_h, hyp_max.state_c
+                    )
+                    cache[hyp_max.str_yseq] = (y, state_h, state_c)
+
+                ytu = F.log_softmax(self.joint(hi, y[0]), dim=-1)
+                top_k = ytu[1:].topk(10, dim=-1)
+                ytu = (
+                    torch.cat((top_k[0], ytu[0:1])),
+                    torch.cat((top_k[1] + 1, blank_tensor)),
+                )
+
+                for logp, k in zip(*ytu):
+                    new_hyp = Hypothesis(
+                        score=hyp_max.score + float(logp),
+                        yseq=hyp_max.yseq[:],
+                        str_yseq=hyp_max.str_yseq,
+                        state_h=hyp_max.state_h,
+                        state_c=hyp_max.state_c,
+                    )
+
+                    if k == 0:
+                        kept_hyps.append(new_hyp)
+                    else:
+                        new_hyp.state_h = state_h
+                        new_hyp.state_c = state_c
+                        new_hyp.yseq.append(int(k))
+                        new_hyp.str_yseq = hyp_max.str_yseq + "_" + str(k)
+                        hyps.append(new_hyp)
+
+                # max_hyp_score = float(max(hyps, key=lambda x: x.score).score)
+                # kept_most_prob = sorted(
+                #     [hyp for hyp in kept_hyps if hyp.score > max_hyp_score],
+                #     key=lambda x: x.score,
+                # )
+                # if len(kept_most_prob) >= 10:
+                #     kept_hyps = kept_most_prob
+                #     break
+                if len(kept_hyps) >= 10:
+                    break
+
+        best_hyp = sorted(
+            kept_hyps, key=lambda x: x.score / len(x.yseq), reverse=True
+        )[0]
+        return best_hyp.yseq
 
     def get_pred_len(self, xlens):
         pred_len = torch.tensor(xlens)
