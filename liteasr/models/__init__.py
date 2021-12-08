@@ -25,6 +25,12 @@ class LiteasrModel(nn.Module):
     def build_model(cls, cfg, task):
         raise NotImplementedError
 
+    def get_pred_len(self, xlens):
+        raise NotImplementedError
+
+    def get_target_len(self, ylens):
+        raise NotImplementedError
+
 
 def build_model(cfg, task) -> LiteasrModel:
     model_name = getattr(cfg, "name", None)
