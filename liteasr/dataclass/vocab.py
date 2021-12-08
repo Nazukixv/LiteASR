@@ -42,6 +42,8 @@ class Vocab(object):
                     raise ValueError(f'Missing token id: {len(self.id2token)}')
                 self.token2id[token] = tokenid
                 self.id2token.append(token)
+        self.token2id['<sos/eos>'] = len(self.id2token)
+        self.id2token.append('<sos/eos>')
 
     @property
     def valid(self) -> bool:
