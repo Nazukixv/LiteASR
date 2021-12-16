@@ -32,10 +32,8 @@ class ASRTask(LiteasrTask):
         self.vocab = Vocab(cfg.vocab)
         self.text = cfg.text
 
-    def build_model(self, cfg):
-        cfg.vocab_size = len(self.vocab)
-        cfg.input_dim = self.data[0][0].shape[-1]
-        return super().build_model(cfg)
+        self.vocab_size = len(self.vocab)
+        self.feat_dim = 0
 
     def load_data(self):
         data = []
@@ -47,6 +45,8 @@ class ASRTask(LiteasrTask):
             assert uttid == uttid_t
             data.append(Audio(uttid, fd, start, end, shape, tokenids))
         data = sorted(data, key=lambda audio: audio.shape[0], reverse=True)
+        self.feat_dim = data[0].shape[-1]
+
         batch_num, batch_size = 0, 20
         while batch_num * batch_size < len(data):
             self.data.append(

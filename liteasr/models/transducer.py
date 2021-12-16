@@ -205,4 +205,6 @@ class Transducer(LiteasrModel):
 
     @classmethod
     def build_model(cls, cfg, task=None):
+        cfg.input_dim = task.feat_dim
+        cfg.vocab_size = task.vocab_size
         return cls(cfg, task)
