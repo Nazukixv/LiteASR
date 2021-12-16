@@ -1,0 +1,5 @@
+defaults:
+  - rnnt
+
+name: rnnt
+trans_type: warp-transducer

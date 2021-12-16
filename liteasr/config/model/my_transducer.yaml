@@ -1,0 +1,18 @@
+defaults:
+  - transducer
+
+name: transducer
+
+# transducer
+joint_dim: 768
+dropout_rate: 0.1
+
+# encoder
+input_dim: ???
+enc_dim: 256
+enc_layers: 4
+
+# decoder
+vocab_size: ???
+dec_dim: 256
+dec_layers: 1

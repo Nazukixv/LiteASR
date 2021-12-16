@@ -1,0 +1,5 @@
+defaults:
+  - _self_
+  - model: my_transducer
+  - criterion: my_rnnt
+  - optimizer: my_noam
