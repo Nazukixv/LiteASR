@@ -191,14 +191,15 @@ class Transducer(LiteasrModel):
         return h_jnt
 
     def _input_prep(self, x, y):
-        xlens = (x != self.padding_id).sum(-1).bool().sum(-1).tolist()
+        x_real = x != self.padding_id
+        xlens: List[int] = x_real.sum(-1).to(dtype=torch.bool).sum(-1).tolist()
         xs_mask = padding_mask(xlens).to(device=x.device)
 
-        ylens = ((y != self.padding_id).sum(-1)
-                 + 1).tolist()  # add <blank> in front
+        y_real = y != self.padding_id
+        ylens: List[int] = (y_real.sum(-1) + 1).tolist()  # add <blank> at left
         ys_mask = padding_mask(ylens).to(device=y.device)
 
-        blank = y.new(y.size(0), 1).fill_(0)
+        blank = torch.zeros(y.size(0), 1).to(dtype=y.dtype, device=y.device)
         blank_y = torch.cat((blank, y), dim=-1)
 
         return x, blank_y, xs_mask, ys_mask

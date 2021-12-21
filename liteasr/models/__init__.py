@@ -28,6 +28,11 @@ class LiteasrModel(nn.Module):
     def inference(self, x):
         raise NotImplementedError
 
+    def script(self):
+        import torch
+        _self = torch.jit.script(self)
+        return _self
+
     def get_pred_len(self, xlens):
         raise NotImplementedError
 
