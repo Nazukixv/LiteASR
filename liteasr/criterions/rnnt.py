@@ -42,7 +42,7 @@ class RNNTLoss(LiteasrLoss):
 
     def __call__(self, model: LiteasrModel, xs, xlens, ys, ylens):
         device = xs.device
-        pred_pad = model(xs, ys)
+        pred_pad = model(xs, xlens, ys, ylens)
         target = ys.int().to(device)
         pred_len = model.get_pred_len(xlens).int().to(device)
         target_len = model.get_target_len(ylens).int().to(device)

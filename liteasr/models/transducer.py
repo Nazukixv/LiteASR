@@ -82,22 +82,31 @@ class Transducer(LiteasrModel):
         self.lin_dec = nn.Linear(cfg.dec_units, cfg.joint_dim, bias=False)
         self.lin_jnt = nn.Linear(cfg.joint_dim, cfg.vocab_size)
         self.joint_activation = nn.Tanh()
-        self.padding_id = 0
+        self.ignore = -1
 
-    def forward(self, x, y):
+    def forward(
+        self,
+        xs,
+        xlens: List[int],
+        ys,
+        ylens: List[int],
+    ):
         """Forward function of Transducer.
 
-        :param x: (batch, time, feat)
-        :type x: Tensor
-        :param y: (batch, length)
-        :type y: Tensor
-        :return: (batch, frame, length, vocab)
+        :param Tensor xs: Padded audio input with shape (`Batch`, `Tmax`, `*`)
+        :param xlens: Time duration of x (`Batch`)
+        :type xlens: List[int]
+        :param Tensor ys: Padded token indices with shape (`Batch`, `Lmax`)
+        :param Tensor ylens: Length of transcripted text of y (`Batch`)
+        :type ylens: List[int]
+        :return: Joint tensor (`Batch`, `Fmax`, `Lmax` + 1, `Vocab`)
         :rtype: Tensor
+
         """
 
-        xs, ys, xs_mask, ys_mask = self._input_prep(x, y)
-        h_enc = self.encoder(xs, mask=xs_mask).unsqueeze(2)
-        h_dec = self.decoder(ys).unsqueeze(1)
+        xs_in, ys_in, xs_mask, ys_mask = self._preprocess(xs, xlens, ys, ylens)
+        h_enc = self.encoder(xs_in, mask=xs_mask).unsqueeze(2)
+        h_dec = self.decoder(ys_in).unsqueeze(1)
         h_jnt = self.joint(h_enc, h_dec)
         return h_jnt
 
@@ -190,19 +199,28 @@ class Transducer(LiteasrModel):
         h_jnt = self.lin_jnt(self.joint_activation(h_enc + h_dec))
         return h_jnt
 
-    def _input_prep(self, x, y):
-        x_real = x != self.padding_id
-        xlens: List[int] = x_real.sum(-1).to(dtype=torch.bool).sum(-1).tolist()
-        xs_mask = padding_mask(xlens).to(device=x.device)
+    def _preprocess(
+        self,
+        xs,
+        xlens: List[int],
+        ys,
+        ylens: List[int],
+    ):
+        # xs_in
+        xs_in = xs
 
-        y_real = y != self.padding_id
-        ylens: List[int] = (y_real.sum(-1) + 1).tolist()  # add <blank> at left
-        ys_mask = padding_mask(ylens).to(device=y.device)
+        # xs_mask
+        xs_mask = padding_mask(xlens).to(device=xs.device)
 
-        blank = torch.zeros(y.size(0), 1).to(dtype=y.dtype, device=y.device)
-        blank_y = torch.cat((blank, y), dim=-1)
+        # ys_in
+        ys_ = ys.masked_fill(ys == self.ignore, 0)
+        blank = torch.zeros(ys.size(0), 1).to(dtype=ys.dtype, device=ys.device)
+        ys_in = torch.cat([blank, ys_], dim=1)
 
-        return x, blank_y, xs_mask, ys_mask
+        # ys_mask
+        ys_mask = padding_mask([yl + 1 for yl in ylens]).to(device=ys.device)
+
+        return xs_in, ys_in, xs_mask, ys_mask
 
     @classmethod
     def build_model(cls, cfg, task=None):
