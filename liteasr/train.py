@@ -55,11 +55,11 @@ def train(
     while epoch < 0 or ep < epoch:
         # train
         for _, batch in enumerate(task.dataset):
-            xs_pad, ys_pad, xlens, ylens = batch
+            xs_pad, xlens, ys_pad, ylens = batch
             xs_pad = xs_pad.to(device=device)
             ys_pad = ys_pad.to(device=device)
 
-            loss = criter(model, xs_pad, ys_pad, xlens, ylens)
+            loss = criter(model, xs_pad, xlens, ys_pad, ylens)
             loss.backward()
             grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 5.0)
             optim.step()

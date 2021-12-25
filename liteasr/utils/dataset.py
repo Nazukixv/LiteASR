@@ -2,10 +2,10 @@
 
 from typing import List
 
+from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset
 
 from liteasr.dataclass.audio_data import Audio
-from liteasr.utils.padding import pad
 
 
 class AudioFileDataset(Dataset):
@@ -21,11 +21,11 @@ class AudioFileDataset(Dataset):
         for audio in audios:
             xs.append(audio.x)
             ys.append(audio.y)
-            xlens.append(int(len(audio.x)))
-            ylens.append(int(len(audio.y)))
-        padded_xs = pad(xs, 0)
-        padded_ys = pad(ys, 0)
-        return padded_xs, padded_ys, xlens, ylens
+            xlens.append(audio.xlen)
+            ylens.append(audio.ylen)
+        padded_xs = pad_sequence(xs, batch_first=True, padding_value=0)
+        padded_ys = pad_sequence(ys, batch_first=True, padding_value=-1)
+        return padded_xs, xlens, padded_ys, ylens
 
     def __len__(self):
         """overload len() method"""

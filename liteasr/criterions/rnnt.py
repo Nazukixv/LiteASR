@@ -40,7 +40,7 @@ class RNNTLoss(LiteasrLoss):
     def build_criterion(cls, cfg, task):
         return cls(cfg, task)
 
-    def __call__(self, model: LiteasrModel, xs, ys, xlens, ylens):
+    def __call__(self, model: LiteasrModel, xs, xlens, ys, ylens):
         device = xs.device
         pred_pad = model(xs, ys)
         target = ys.int().to(device)

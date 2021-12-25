@@ -25,6 +25,14 @@ class Audio(object):
         return x
 
     @property
+    def xlen(self):
+        return self.shape[0]
+
+    @property
     def y(self):
         y = torch.tensor(self.tokenids) if self.tokenids is not None else None
         return y
+
+    @property
+    def ylen(self):
+        return len(self.tokenids)
