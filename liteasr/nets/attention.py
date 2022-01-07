@@ -10,18 +10,18 @@ class MultiHeadAttention(nn.Module):
     def __init__(
         self,
         n_head: int,
-        input_dim: int,
+        i_dim: int,
         dropout_rate: float,
     ) -> None:
         super().__init__()
-        assert input_dim % n_head == 0
-        self.d_k = input_dim // n_head
+        assert i_dim % n_head == 0
+        self.d_k = i_dim // n_head
         self.scaling = self.d_k**-0.5
         self.h = n_head
-        self.linear_q = nn.Linear(input_dim, input_dim)
-        self.linear_k = nn.Linear(input_dim, input_dim)
-        self.linear_v = nn.Linear(input_dim, input_dim)
-        self.linear_o = nn.Linear(input_dim, input_dim)
+        self.linear_q = nn.Linear(i_dim, i_dim)
+        self.linear_k = nn.Linear(i_dim, i_dim)
+        self.linear_v = nn.Linear(i_dim, i_dim)
+        self.linear_o = nn.Linear(i_dim, i_dim)
         self.dropout = nn.Dropout(dropout_rate)
         self.softmax = nn.Softmax(dim=-1)
 

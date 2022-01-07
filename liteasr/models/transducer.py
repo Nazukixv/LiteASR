@@ -72,7 +72,7 @@ class Transducer(LiteasrModel):
             dropout_rate=cfg.enc_dropout_rate,
         )
         self.decoder = RNNDecoder(
-            vocab_size=cfg.vocab_size,
+            i_dim=cfg.vocab_size,
             h_dim=cfg.dec_dim,
             h_units=cfg.dec_units,
             n_layer=cfg.dec_layers,

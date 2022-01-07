@@ -11,14 +11,14 @@ class RNNDecoder(nn.Module):
 
     def __init__(
         self,
-        vocab_size: int,
+        i_dim: int,
         h_dim: int,
         h_units: int,
         n_layer: int,
         dropout_rate: float,
     ):
         super().__init__()
-        self.embed = nn.Embedding(vocab_size, h_dim)
+        self.embed = nn.Embedding(i_dim, h_dim)
         self.dropout_embed = nn.Dropout(dropout_rate)
         self.dec_layers = nn.ModuleList(
             [nn.LSTMCell(h_dim, h_units)]
