@@ -189,6 +189,10 @@ class Transducer(LiteasrModel):
         pred_len = ((pred_len - 1) // 2 - 1) // 2
         return pred_len
 
+    def get_target(self, ys, ylens):
+        target = ys
+        return target
+
     def get_target_len(self, ylens):
         target_len = torch.tensor(ylens)
         return target_len

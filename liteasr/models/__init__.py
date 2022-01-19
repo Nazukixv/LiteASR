@@ -36,6 +36,9 @@ class LiteasrModel(nn.Module):
     def get_pred_len(self, xlens):
         raise NotImplementedError
 
+    def get_target(self, ys, ylens):
+        raise NotImplementedError
+
     def get_target_len(self, ylens):
         raise NotImplementedError
 
