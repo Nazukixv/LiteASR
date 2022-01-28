@@ -1,94 +1,74 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import logging
+import os
+
 import hydra
+from hydra.core.hydra_config import HydraConfig
+from omegaconf import OmegaConf
+from omegaconf import open_dict
 import torch
 
 from liteasr import tasks
 from liteasr.config import LiteasrConfig
-from liteasr.criterions import LiteasrLoss
-from liteasr.models import LiteasrModel
-from liteasr.optims import LiteasrOptimizer
-from liteasr.tasks import LiteasrTask
+from liteasr.distributed import utils as dist_util
+
+from liteasr.trainer import Trainer
+
+logger = logging.getLogger("liteasr.train")
 
 
 @hydra.main(config_path="config", config_name="config")
 def main(cfg: LiteasrConfig) -> None:
+    # make hydra logging work with ddp
+    # (see https://github.com/facebookresearch/hydra/issues/1126)
+    with open_dict(cfg):
+        cfg.job_logging_cfg = OmegaConf.to_container(
+            HydraConfig.get().job_logging, resolve=True
+        )
+    cfg = OmegaConf.create(
+        OmegaConf.to_container(cfg, resolve=True, enum_to_str=True)
+    )
+    # OmegaConf.set_struct(cfg, True)
+
+    dist_util.call_func(train, cfg)
+
+
+def train(cfg: LiteasrConfig):
     # set random seed
-    torch.manual_seed(42)
+    torch.manual_seed(cfg.common.seed)
+    logger.info("set random seed as {}".format(cfg.common.seed))
 
     # set torch device
-    torch.cuda.set_device(0)
     device = torch.device("cuda")
 
     # set task
     task = tasks.setup_task(cfg.task)
+    logger.info("setting {} task...".format(task.__class__.__name__))
 
     # load training data
+    logger.info(
+        "1. load trainging data from {}".format(os.path.dirname(cfg.task.scp))
+    )
     task.load_data()
 
     # build model
     model = task.build_model(cfg.model)
     model = model.to(device=device)
+    logger.info("2. build model    : {}".format(model.__class__.__name__))
+    logger.debug("model structure:\n{}".format(model))
 
     # build optimizer
+    logger.info("3. build optimizer: {}".format(cfg.optimizer.name))
     optim = task.build_optimizer(model.parameters(), cfg.optimizer)
 
     # build criterion
+    logger.info("4. build criterion: {}".format(cfg.criterion.name))
     criter = task.build_criterion(cfg.criterion)
 
-    train(task, model, optim, criter, device=device, epoch=-1)
-
-
-def train(
-    task: LiteasrTask,
-    model: LiteasrModel,
-    optim: LiteasrOptimizer,
-    criter: LiteasrLoss,
-    device: torch.device,
-    epoch: int,
-):
-    # epoch < 0: infinite loop
-    # epoch = 0: do nothing
-    # epoch > 0: train for `epoch` epoches
-    ep = 0
-    while epoch < 0 or ep < epoch:
-        # train
-        for _, batch in enumerate(task.dataset):
-            xs_pad, xlens, ys_pad, ylens = batch
-            xs_pad = xs_pad.to(device=device)
-            ys_pad = ys_pad.to(device=device)
-
-            loss = criter(model, xs_pad, xlens, ys_pad, ylens)
-            loss.backward()
-            grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 5.0)
-            optim.step()
-            optim.zero_grad()
-
-        # evaluate
-        if ep % 100 == 0:
-            model.eval()
-            with torch.no_grad():
-                print("\033[%d;%dH" % (1, 0))
-                i = 0
-                for data_batch in task.data:
-                    for test_data in data_batch:
-                        feats = test_data.x.unsqueeze(0).to(device=device)
-                        tgt = "".join(task.vocab.lookup(test_data.tokenids))
-                        pred = task.inference(feats, model=model)
-                        print(" " * 80)
-                        print("\033[%d;%dH" % (i + 1, 0))
-                        print(f"{'✅' if tgt == pred else '💔'} {pred}")
-                        i += 1
-                print("=" * 80)
-                print(
-                    "{} LOSS: {:>9.4f} GRAD: {:9.4f}".format(
-                        ep, loss.item(), grad_norm.item()
-                    )
-                )
-            model.train()
-
-        ep += 1
+    trainer = Trainer(cfg, task, model, criter, optim)
+    trainer.run()
 
 
 if __name__ == "__main__":

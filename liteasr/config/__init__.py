@@ -11,6 +11,8 @@ class LiteasrDataclass(object):
 
 @dataclass
 class LiteasrConfig(LiteasrDataclass):
+    common: Any = None
+    distributed: Any = None
     task: Any = None
     model: Any = None
     criterion: Any = None

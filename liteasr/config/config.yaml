@@ -3,3 +3,26 @@ defaults:
   - model: my_transducer
   - criterion: my_rnnt
   - optimizer: my_noam
+
+common:
+  seed: 42
+
+distributed:
+  world_size: 4
+
+hydra:
+  job_logging:
+    formatters:
+      simple:
+        format: '[%(levelname)s]: %(message)s'
+      my_fmt:
+        format: '[%(asctime)s][%(levelname)s][%(name)s:%(lineno)s][%(funcName)s] - %(message)s'
+    handlers:
+      file:
+        class: logging.FileHandler
+        formatter: my_fmt
+        filename: ${hydra.job.name}.log
+      console:
+        level: INFO
+    root:
+      level: NOTSET
