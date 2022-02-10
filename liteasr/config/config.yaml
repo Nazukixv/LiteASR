@@ -1,8 +1,9 @@
 defaults:
-  - _self_
+  - liteasr_config
   - model: my_transducer
   - criterion: my_rnnt
   - optimizer: my_noam
+  - _self_
 
 common:
   seed: 42

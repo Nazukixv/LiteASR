@@ -5,6 +5,7 @@ import logging
 import os
 
 import hydra
+from hydra.core.config_store import ConfigStore
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import OmegaConf
 from omegaconf import open_dict
@@ -35,6 +36,16 @@ def main(cfg: LiteasrConfig) -> None:
     dist_util.call_func(train, cfg)
 
 
+def config_init(config_name="liteasr_config"):
+    cs = ConfigStore.instance()
+    cs.store(name=config_name, node=LiteasrConfig)
+
+
+def cli_main():
+    config_init()
+    main()
+
+
 def train(cfg: LiteasrConfig):
     # set random seed
     torch.manual_seed(cfg.common.seed)
@@ -60,16 +71,16 @@ def train(cfg: LiteasrConfig):
     logger.debug("model structure:\n{}".format(model))
 
     # build optimizer
-    logger.info("3. build optimizer: {}".format(cfg.optimizer.name))
     optim = task.build_optimizer(model.parameters(), cfg.optimizer)
+    logger.info("3. build optimizer: {}".format(optim.__class__.__name__))
 
     # build criterion
-    logger.info("4. build criterion: {}".format(cfg.criterion.name))
     criter = task.build_criterion(cfg.criterion)
+    logger.info("4. build criterion: {}".format(criter.__class__.__name__))
 
     trainer = Trainer(cfg, task, model, criter, optim)
     trainer.run()
 
 
 if __name__ == "__main__":
-    main()
+    cli_main()
