@@ -89,6 +89,9 @@ def call_func(func, cfg: LiteasrConfig):
         return
     elif torch.cuda.device_count() == 1 or cfg.distributed.world_size == 1:
         logger.info("using only one single GPU, not apply distributed training")
+        logger.debug(
+            "model training config:\n{}".format(OmegaConf.to_yaml(cfg))
+        )
         func(cfg)
     else:
         check_distributed_config(cfg.distributed)
