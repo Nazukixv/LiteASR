@@ -6,12 +6,13 @@ import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
 
+from liteasr.config import DistributedConfig
 from liteasr.config import LiteasrConfig
 
 logger = logging.getLogger(__name__)
 
 
-def check_distributed_config(cfg):
+def check_distributed_config(cfg: DistributedConfig):
     device_count = torch.cuda.device_count()
     if cfg.world_size > device_count:
         logger.warning(
@@ -20,13 +21,12 @@ def check_distributed_config(cfg):
         cfg.world_size = device_count
 
 
-def infer_init_method(cfg):
-    cfg.backend = "NCCL"
-
-    sock = socket.socket()
-    sock.bind(("", 0))
-    port = sock.getsockname()[1]
-    cfg.init_method = "tcp://localhost:{}".format(port)
+def infer_init_method(cfg: DistributedConfig):
+    if cfg.init_method is None:
+        sock = socket.socket()
+        sock.bind(("", 0))
+        port = sock.getsockname()[1]
+        cfg.init_method = "tcp://localhost:{}".format(port)
 
 
 def distributed_init(cfg: LiteasrConfig):
