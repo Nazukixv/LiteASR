@@ -52,8 +52,18 @@ class Trainer(object):
                 self._wrapped_model = self._model
         return self._wrapped_model
 
+    def is_master(self):
+        if self.cfg.distributed.world_size > 1:
+            return dist.get_rank() == 0
+        else:
+            return True
+
     def run(self):
-        sampler = DistributedSampler(self.task.dataset)
+        if self.cfg.distributed.world_size > 1:
+            sampler = DistributedSampler(self.task.dataset)
+        else:
+            sampler = None
+
         train_iter = DataLoader(
             dataset=self.task.dataset,
             batch_size=1,
@@ -64,7 +74,8 @@ class Trainer(object):
         device = torch.device("cuda")
 
         for ep in range(self.epoch):
-            train_iter.sampler.set_epoch(ep)
+            if hasattr(train_iter.sampler, "set_epoch"):
+                train_iter.sampler.set_epoch(ep)
             for batch in train_iter:
                 batch = to_device(batch, device)
 
@@ -86,7 +97,7 @@ class Trainer(object):
                 )
 
             if ep % 1000 == 0 and ep != 0:
-                if dist.get_rank() == 0:
+                if self.is_master():
                     self.model.eval()
                     with torch.no_grad():
                         i = 0
