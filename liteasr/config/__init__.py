@@ -23,6 +23,7 @@ class DistributedConfig(LiteasrDataclass):
     rank: int = field(default=0)
     backend: str = field(default="NCCL")
     init_method: Optional[str] = field(default=None)
+    device_id: int = field(default=0)
 
 
 @dataclass
