@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from dataclasses import field
+import logging
 from typing import Optional
 
 from omegaconf import MISSING
@@ -12,6 +13,8 @@ from liteasr.dataclass.vocab import Vocab
 from liteasr.models import LiteasrModel
 from liteasr.tasks import LiteasrTask
 from liteasr.tasks import register_task
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -44,6 +47,10 @@ class ASRTask(LiteasrTask):
             uttid_t, tokenids = text_info
             assert uttid == uttid_t
             data.append(Audio(uttid, fd, start, end, shape, tokenids))
+            if len(data) % 10000 == 0:
+                logger.info("number of loaded data: {}".format(len(data)))
+        logger.info("number of loaded data: {}".format(len(data)))
+
         data = sorted(data, key=lambda audio: audio.shape[0], reverse=True)
         self.feat_dim = data[0].shape[-1]
 
