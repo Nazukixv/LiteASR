@@ -11,6 +11,7 @@ from torch.utils.data.distributed import DistributedSampler
 
 from liteasr.config import LiteasrConfig
 from liteasr.criterions import LiteasrLoss
+from liteasr.distributed.ddp_model_wrapper import DDPModelWrapper
 from liteasr.models import LiteasrModel
 from liteasr.optims import LiteasrOptimizer
 from liteasr.tasks import LiteasrTask
@@ -31,18 +32,25 @@ class Trainer(object):
     ):
         self.cfg = cfg
         self.task = task
-        self.model = self._build_model(model)
+        self._model = model
+        self._wrapped_model = None
         self.criterion = criterion
         self.optimizer = optimizer
         self.epoch = 1000000
 
-    def _build_model(self, model: LiteasrModel):
-        model = DistributedDataParallel(
-            module=model,
-            device_ids=[self.cfg.distributed.device_id],
-            output_device=self.cfg.distributed.rank,
-        )
-        return model
+    @property
+    def model(self):
+        if self._wrapped_model is None:
+            if self.cfg.distributed.world_size > 1:
+                ddp_model = DistributedDataParallel(
+                    module=self._model,
+                    device_ids=[self.cfg.distributed.device_id],
+                    output_device=self.cfg.distributed.rank,
+                )
+                self._wrapped_model = DDPModelWrapper(ddp_model)
+            else:
+                self._wrapped_model = self._model
+        return self._wrapped_model
 
     def run(self):
         sampler = DistributedSampler(self.task.dataset)
@@ -79,7 +87,7 @@ class Trainer(object):
 
             if ep % 1000 == 0 and ep != 0:
                 if dist.get_rank() == 0:
-                    self.model.module.eval()
+                    self.model.eval()
                     with torch.no_grad():
                         i = 0
                         for data_batch in self.task.data:
@@ -91,10 +99,10 @@ class Trainer(object):
                                     self.task.vocab.lookup(test_data.tokenids)
                                 )
                                 pred = self.task.inference(
-                                    feats, model=self.model.module
+                                    feats, model=self.model
                                 )
                                 logger.info(
                                     f"{'[X]' if tgt == pred else '[ ]'} {pred}"
                                 )
                                 i += 1
-                    self.model.module.train()
+                    self.model.train()
