@@ -6,7 +6,6 @@ import math
 import torch
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel
-from torch.utils.data.dataloader import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 
 from liteasr.config import LiteasrConfig
@@ -15,6 +14,7 @@ from liteasr.distributed.ddp_model_wrapper import DDPModelWrapper
 from liteasr.models import LiteasrModel
 from liteasr.optims import LiteasrOptimizer
 from liteasr.tasks import LiteasrTask
+from liteasr.utils.data_loader import EpochDataLoader
 from liteasr.utils.device import to_device
 
 logger = logging.getLogger(__name__)
@@ -36,7 +36,27 @@ class Trainer(object):
         self._wrapped_model = None
         self.criterion = criterion
         self.optimizer = optimizer
-        self.epoch = 1000000
+        self.update = 0
+
+        if self.cfg.distributed.world_size > 1:
+            sampler = DistributedSampler(self.task.dataset)
+        else:
+            sampler = None
+
+        self.train_iter = EpochDataLoader(
+            dataset=self.task.dataset,
+            batch_size=1,
+            shuffle=(sampler is None),
+            sampler=sampler,
+            collate_fn=lambda x: x[0],
+        )
+
+        self.device = torch.device("cuda")
+
+        self.triggers = {
+            "loss": Trigger(100, "iteration"),
+            "valid": Trigger(2000, "iteration"),
+        }
 
     @property
     def model(self):
@@ -52,68 +72,78 @@ class Trainer(object):
                 self._wrapped_model = self._model
         return self._wrapped_model
 
+    @property
+    def epoch(self):
+        return self.train_iter.epoch
+
     def is_master(self):
         if self.cfg.distributed.world_size > 1:
             return dist.get_rank() == 0
         else:
             return True
 
-    def run(self):
-        if self.cfg.distributed.world_size > 1:
-            sampler = DistributedSampler(self.task.dataset)
-        else:
-            sampler = None
-
-        train_iter = DataLoader(
-            dataset=self.task.dataset,
-            batch_size=1,
-            shuffle=(sampler is None),
-            sampler=sampler,
-            collate_fn=lambda x: x[0],
+    def stop(self):
+        reach_max_epoch = (
+            self.cfg.optimization.max_epoch >= 0
+            and self.epoch >= self.cfg.optimization.max_epoch
         )
-        device = torch.device("cuda")
+        reach_max_update = (
+            self.cfg.optimization.max_update >= 0
+            and self.update >= self.cfg.optimization.max_update
+        )
+        return reach_max_epoch or reach_max_update
 
-        for ep in range(self.epoch):
-            if hasattr(train_iter.sampler, "set_epoch"):
-                train_iter.sampler.set_epoch(ep)
-            for batch in train_iter:
-                batch = to_device(batch, device)
+    def run(self):
+        for batch in self.train_iter:
+            if self.stop():
+                break
+            batch = to_device(batch, self.device)
 
-                loss = self.criterion(self.model, *batch)
-                loss.backward()
-                grad_norm = torch.nn.utils.clip_grad_norm_(
-                    self.model.parameters(), 5.0
-                )
-                if not math.isnan(grad_norm):
-                    self.optimizer.step()
-                self.optimizer.zero_grad()
+            loss = self.criterion(self.model, *batch)
+            loss.backward()
+            grad_norm = torch.nn.utils.clip_grad_norm_(
+                self.model.parameters(), 5.0
+            )
+            if not math.isnan(grad_norm):
+                self.optimizer.step()
+                self.update += 1
+            self.optimizer.zero_grad()
 
-            if ep % 100 == 0 and ep != 0:
+            if self.triggers["loss"](self):
                 logger.info(
                     "epoch {} - current loss: {:.2f}".format(
-                        ep,
+                        self.epoch,
                         loss.item(),
                     )
                 )
 
-            if ep % 1000 == 0 and ep != 0:
+            if self.triggers["valid"](self):
                 if self.is_master():
                     self.model.eval()
                     with torch.no_grad():
-                        i = 0
-                        for data_batch in self.task.data:
-                            for test_data in data_batch:
-                                feats = test_data.x.unsqueeze(0).to(
-                                    device=device
-                                )
-                                tgt = "".join(
-                                    self.task.vocab.lookup(test_data.tokenids)
-                                )
-                                pred = self.task.inference(
-                                    feats, model=self.model
-                                )
-                                logger.info(
-                                    f"{'[X]' if tgt == pred else '[ ]'} {pred}"
-                                )
-                                i += 1
+                        # TODO: validation
+                        pass
                     self.model.train()
+
+
+class Trigger(object):
+
+    def __init__(self, interval: int, unit: str):
+        assert unit in ["epoch", "iteration"]
+        self.interval = interval
+        self.unit = unit
+        self.prev_unit = 0
+
+    def __call__(self, trainer: Trainer):
+        if self.unit == "epoch":
+            if trainer.epoch == self.prev_unit + self.interval:
+                self.prev_unit += self.interval
+                return True
+            else:
+                return False
+        else:
+            if trainer.update == self.prev_unit + self.interval:
+                self.prev_unit += self.interval
+                return True
+            else:
+                return False
