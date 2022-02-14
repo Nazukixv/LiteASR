@@ -5,6 +5,7 @@ from typing import Optional
 
 from omegaconf import MISSING
 
+from liteasr.config import DatasetConfig
 from liteasr.config import LiteasrDataclass
 from liteasr.dataclass.audio_data import Audio
 from liteasr.dataclass.sheet import AudioSheet
@@ -38,7 +39,7 @@ class ASRTask(LiteasrTask):
         self.vocab_size = len(self.vocab)
         self.feat_dim = 0
 
-    def load_data(self):
+    def load_data(self, cfg: DatasetConfig):
         data = []
         audio_sheet = AudioSheet(self.scp, self.segments)
         text_sheet = TextSheet(self.text, self.vocab)
@@ -51,15 +52,15 @@ class ASRTask(LiteasrTask):
                 logger.info("number of loaded data: {}".format(len(data)))
         logger.info("number of loaded data: {}".format(len(data)))
 
+        # TODO: batchify
         data = sorted(data, key=lambda audio: audio.shape[0], reverse=True)
         self.feat_dim = data[0].shape[-1]
 
-        batch_num, batch_size = 0, 20
-        while batch_num * batch_size < len(data):
+        while len(self.data) * cfg.batch_size < len(data):
             self.data.append(
-                data[batch_num * batch_size:(batch_num + 1) * batch_size]
+                data[len(self.data) * cfg.batch_size:(len(self.data) + 1)
+                     * cfg.batch_size]
             )
-            batch_num += 1
 
         from liteasr.utils.dataset import AudioFileDataset
         self.dataset = AudioFileDataset(self.data)

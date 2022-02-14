@@ -25,7 +25,7 @@ class LiteasrTask(object):
         self.data = []
         self.dataset = None
 
-    def load_data(self):
+    def load_data(self, cfg):
         raise NotImplementedError
 
     def inference(self, x, model: LiteasrModel):

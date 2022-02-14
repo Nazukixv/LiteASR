@@ -62,7 +62,7 @@ def train(cfg: LiteasrConfig):
     logger.info(
         "1. load trainging data from {}".format(os.path.dirname(cfg.task.scp))
     )
-    task.load_data()
+    task.load_data(cfg.dataset)
 
     # build model
     model = task.build_model(cfg.model)

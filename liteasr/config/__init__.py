@@ -18,6 +18,11 @@ class CommonConfig(LiteasrDataclass):
 
 
 @dataclass
+class DatasetConfig(LiteasrDataclass):
+    batch_size: Optional[int] = field(default=None)
+
+
+@dataclass
 class DistributedConfig(LiteasrDataclass):
     world_size: int = field(default=max(1, torch.cuda.device_count()))
     rank: int = field(default=0)
@@ -35,6 +40,7 @@ class OptimizationConfig(LiteasrDataclass):
 @dataclass
 class LiteasrConfig(LiteasrDataclass):
     common: CommonConfig = CommonConfig()
+    dataset: DatasetConfig = DatasetConfig()
     distributed: DistributedConfig = DistributedConfig()
     optimization: OptimizationConfig = OptimizationConfig()
     task: Any = None
