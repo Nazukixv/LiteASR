@@ -27,9 +27,16 @@ class DistributedConfig(LiteasrDataclass):
 
 
 @dataclass
+class OptimizationConfig(LiteasrDataclass):
+    max_epoch: int = field(default=-1)
+    max_update: int = field(default=-1)
+
+
+@dataclass
 class LiteasrConfig(LiteasrDataclass):
     common: CommonConfig = CommonConfig()
     distributed: DistributedConfig = DistributedConfig()
+    optimization: OptimizationConfig = OptimizationConfig()
     task: Any = None
     model: Any = None
     criterion: Any = None
