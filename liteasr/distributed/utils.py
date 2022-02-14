@@ -88,7 +88,7 @@ def call_func(func, cfg: LiteasrConfig):
         logger.warning("CUDA is NOT available!")
         return
     elif torch.cuda.device_count() == 1 or cfg.distributed.world_size == 1:
-        logger.info("using only one single GPU, not apply distributed training")
+        logger.info("using only one single GPU, not apply DDP training")
         logger.debug(
             "model training config:\n{}".format(OmegaConf.to_yaml(cfg))
         )
