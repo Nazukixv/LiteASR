@@ -34,7 +34,7 @@ class DistributedConfig(LiteasrDataclass):
 @dataclass
 class OptimizationConfig(LiteasrDataclass):
     max_epoch: int = field(default=-1)
-    max_update: int = field(default=-1)
+    max_iter: int = field(default=-1)
 
 
 @dataclass

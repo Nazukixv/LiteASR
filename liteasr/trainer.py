@@ -97,11 +97,11 @@ class Trainer(object):
             self.cfg.optimization.max_epoch >= 0
             and self.epoch >= self.cfg.optimization.max_epoch
         )
-        reach_max_update = (
-            self.cfg.optimization.max_update >= 0
-            and self.update >= self.cfg.optimization.max_update
+        reach_max_iter = (
+            self.cfg.optimization.max_iter >= 0
+            and self.update >= self.cfg.optimization.max_iter
         )
-        return reach_max_epoch or reach_max_update
+        return reach_max_epoch or reach_max_iter
 
     def run(self):
         for batch in self.train_iter:
