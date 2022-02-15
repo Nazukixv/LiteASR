@@ -37,7 +37,7 @@ class Trainer(object):
         self._wrapped_model = None
         self.criterion = criterion
         self.optimizer = optimizer
-        self.update = 0
+        self.iter = 0
 
         if self.cfg.distributed.world_size > 1:
             train_sampler = DistributedSampler(self.task.train_set)
@@ -86,6 +86,20 @@ class Trainer(object):
     def epoch(self):
         return self.train_iter.epoch
 
+    @property
+    def max_epoch(self):
+        if self.cfg.optimization.max_epoch > 0:
+            return self.cfg.optimization.max_epoch
+        else:
+            return "inf"
+
+    @property
+    def max_iter(self):
+        if self.cfg.optimization.max_iter > 0:
+            return self.cfg.optimization.max_iter
+        else:
+            return "inf"
+
     def is_master(self):
         if self.cfg.distributed.world_size > 1:
             return dist.get_rank() == 0
@@ -99,7 +113,7 @@ class Trainer(object):
         )
         reach_max_iter = (
             self.cfg.optimization.max_iter >= 0
-            and self.update >= self.cfg.optimization.max_iter
+            and self.iter >= self.cfg.optimization.max_iter
         )
         return reach_max_epoch or reach_max_iter
 
@@ -116,13 +130,17 @@ class Trainer(object):
             )
             if not math.isnan(grad_norm):
                 self.optimizer.step()
-                self.update += 1
+                self.iter += 1
             self.optimizer.zero_grad()
 
             if self.triggers["loss"](self):
                 logger.info(
-                    "epoch {} - current loss: {:.2f}".format(
+                    "{} / {} iters, {} / {} epochs - current loss: {:.2f}".
+                    format(
+                        self.iter,
+                        self.max_iter,
                         self.epoch,
+                        self.max_epoch,
                         loss.item(),
                     )
                 )
@@ -140,7 +158,14 @@ class Trainer(object):
                         losses.append(loss)
                     reduced_loss = torch.mean(torch.tensor(losses))
                     logger.info(
-                        "validation loss: {:.2f}".format(reduced_loss.item())
+                        "{} / {} iters, {} / {} epochs - valid loss: {:.2f}".
+                        format(
+                            self.iter,
+                            self.max_iter,
+                            self.epoch,
+                            self.max_epoch,
+                            reduced_loss.item(),
+                        )
                     )
                 self.model.train()
 
@@ -161,7 +186,7 @@ class Trigger(object):
             else:
                 return False
         else:
-            if trainer.update == self.prev_unit + self.interval:
+            if trainer.iter == self.prev_unit + self.interval:
                 self.prev_unit += self.interval
                 return True
             else:
