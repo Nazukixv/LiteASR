@@ -19,11 +19,16 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class ASRConfig(LiteasrDataclass):
+class DataConfig(object):
     scp: str = field(default=MISSING)
     segments: Optional[str] = None
-    vocab: str = field(default=MISSING)
     text: str = field(default=MISSING)
+
+
+@dataclass
+class ASRConfig(LiteasrDataclass):
+    vocab: str = field(default=MISSING)
+    train: DataConfig = DataConfig()
 
 
 @register_task('asr', dataclass=ASRConfig)
@@ -31,18 +36,16 @@ class ASRTask(LiteasrTask):
 
     def __init__(self, cfg: ASRConfig):
         super().__init__()
-        self.scp = cfg.scp
-        self.segments = cfg.segments
         self.vocab = Vocab(cfg.vocab)
-        self.text = cfg.text
+        self.train = cfg.train
 
         self.vocab_size = len(self.vocab)
         self.feat_dim = 0
 
     def load_data(self, cfg: DatasetConfig):
         data = []
-        audio_sheet = AudioSheet(self.scp, self.segments)
-        text_sheet = TextSheet(self.text, self.vocab)
+        audio_sheet = AudioSheet(self.train.scp, self.train.segments)
+        text_sheet = TextSheet(self.train.text, self.vocab)
         for audio_info, text_info in zip(audio_sheet, text_sheet):
             uttid, fd, start, end, shape = audio_info
             uttid_t, tokenids = text_info
