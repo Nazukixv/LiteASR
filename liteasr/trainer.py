@@ -6,6 +6,7 @@ import math
 import torch
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel
+from torch.utils.data.dataloader import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 
 from liteasr.config import LiteasrConfig
@@ -39,15 +40,24 @@ class Trainer(object):
         self.update = 0
 
         if self.cfg.distributed.world_size > 1:
-            sampler = DistributedSampler(self.task.dataset)
+            train_sampler = DistributedSampler(self.task.train_set)
+            valid_sampler = DistributedSampler(self.task.valid_set)
         else:
-            sampler = None
+            train_sampler = None
+            valid_sampler = None
 
         self.train_iter = EpochDataLoader(
-            dataset=self.task.dataset,
+            dataset=self.task.train_set,
             batch_size=1,
-            shuffle=(sampler is None),
-            sampler=sampler,
+            shuffle=(train_sampler is None),
+            sampler=train_sampler,
+            collate_fn=lambda x: x[0],
+        )
+        self.valid_iter = DataLoader(
+            dataset=self.task.valid_set,
+            batch_size=1,
+            shuffle=(valid_sampler is None),
+            sampler=valid_sampler,
             collate_fn=lambda x: x[0],
         )
 
@@ -118,12 +128,21 @@ class Trainer(object):
                 )
 
             if self.triggers["valid"](self):
-                if self.is_master():
-                    self.model.eval()
-                    with torch.no_grad():
-                        # TODO: validation
-                        pass
-                    self.model.train()
+                self.model.eval()
+                with torch.no_grad():
+                    losses = []
+                    for bat in self.valid_iter:
+                        bat = to_device(bat, self.device)
+                        loss = self.criterion(self.model, *batch)
+                        if self.cfg.distributed.world_size > 1:
+                            dist.reduce(loss, dst=0)
+                            loss /= self.cfg.distributed.world_size
+                        losses.append(loss)
+                    reduced_loss = torch.mean(torch.tensor(losses))
+                    logger.info(
+                        "validation loss: {:.2f}".format(reduced_loss.item())
+                    )
+                self.model.train()
 
 
 class Trigger(object):

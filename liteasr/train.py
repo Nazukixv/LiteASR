@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import os
 
 import hydra
 from hydra.core.config_store import ConfigStore
@@ -59,11 +58,7 @@ def train(cfg: LiteasrConfig):
     logger.info("setting {} task...".format(task.__class__.__name__))
 
     # load training data
-    logger.info(
-        "1. load trainging data from {}".format(
-            os.path.dirname(cfg.task.train.scp)
-        )
-    )
+    logger.info("1. load data...")
     task.load_data(cfg.dataset)
 
     # build model
