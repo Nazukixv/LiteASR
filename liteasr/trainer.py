@@ -17,6 +17,7 @@ from liteasr.optims import LiteasrOptimizer
 from liteasr.tasks import LiteasrTask
 from liteasr.utils.data_loader import EpochDataLoader
 from liteasr.utils.device import to_device
+from liteasr.utils.trigger import Trigger
 
 logger = logging.getLogger(__name__)
 
@@ -133,7 +134,7 @@ class Trainer(object):
                 self.iter += 1
             self.optimizer.zero_grad()
 
-            if self.triggers["loss"](self):
+            if self.triggers["loss"].is_triggered(self):
                 logger.info(
                     "{} / {} iters, {} / {} epochs - current loss: {:.2f}".
                     format(
@@ -145,7 +146,7 @@ class Trainer(object):
                     )
                 )
 
-            if self.triggers["valid"](self):
+            if self.triggers["valid"].is_triggered(self):
                 self.model.eval()
                 with torch.no_grad():
                     losses = []
@@ -168,26 +169,3 @@ class Trainer(object):
                         )
                     )
                 self.model.train()
-
-
-class Trigger(object):
-
-    def __init__(self, interval: int, unit: str):
-        assert unit in ["epoch", "iteration"]
-        self.interval = interval
-        self.unit = unit
-        self.prev_unit = 0
-
-    def __call__(self, trainer: Trainer):
-        if self.unit == "epoch":
-            if trainer.epoch == self.prev_unit + self.interval:
-                self.prev_unit += self.interval
-                return True
-            else:
-                return False
-        else:
-            if trainer.iter == self.prev_unit + self.interval:
-                self.prev_unit += self.interval
-                return True
-            else:
-                return False
