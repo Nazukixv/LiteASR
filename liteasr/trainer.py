@@ -68,6 +68,7 @@ class Trainer(object):
         self.event_manager = EventManager()
         self.event_manager.add_event(self._report_loss)
         self.event_manager.add_event(self._valid)
+        self.event_manager.add_event(self._save_model)
         self.loss = None
 
     @property
@@ -180,3 +181,9 @@ class Trainer(object):
                 )
             )
         self.model.train()
+
+    @Trigger(1, "epoch")
+    def _save_model(self):
+        if self.is_master():
+            model_name = "model.ep.{}.pt".format(self.epoch)
+            self.task.save_model(model_name, self.model)

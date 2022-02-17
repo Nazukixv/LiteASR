@@ -31,6 +31,7 @@ class ASRConfig(LiteasrDataclass):
     vocab: str = field(default=MISSING)
     train: DataConfig = DataConfig()
     valid: DataConfig = DataConfig()
+    save_dir: str = field(default=MISSING)
 
 
 @register_task('asr', dataclass=ASRConfig)
@@ -41,6 +42,7 @@ class ASRTask(LiteasrTask):
         self.vocab = Vocab(cfg.vocab)
         self.train = cfg.train
         self.valid = cfg.valid
+        self.save_dir = cfg.save_dir
 
         self.vocab_size = len(self.vocab)
         self.feat_dim = 0
@@ -92,6 +94,10 @@ class ASRTask(LiteasrTask):
         tokenids = model.inference(x)
         tokens = self.vocab.lookup(tokenids)
         return ''.join(tokens[1:])
+
+    def save_model(self, model_name: str, model: LiteasrModel):
+        model_path = os.sep.join((self.save_dir, model_name))
+        model.save(model_path)
 
     def _load_dataset(self, cfg: DataConfig):
         data = []

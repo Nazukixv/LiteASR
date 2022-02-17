@@ -5,6 +5,7 @@ import os
 
 from hydra.core.config_store import ConfigStore
 from omegaconf import OmegaConf
+import torch
 import torch.nn as nn
 
 from liteasr.config import LiteasrDataclass
@@ -27,6 +28,9 @@ class LiteasrModel(nn.Module):
 
     def inference(self, x):
         raise NotImplementedError
+
+    def save(self, model_path):
+        torch.save(self, model_path)
 
     def script(self):
         import torch

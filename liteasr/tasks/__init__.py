@@ -33,6 +33,9 @@ class LiteasrTask(object):
     def inference(self, x, model: LiteasrModel):
         raise NotImplementedError
 
+    def save_model(self, model_name: str, model: LiteasrModel):
+        raise NotImplementedError
+
     def build_model(self, cfg) -> LiteasrModel:
         model = models.build_model(cfg, self)
         return model
