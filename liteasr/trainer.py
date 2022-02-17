@@ -17,6 +17,7 @@ from liteasr.optims import LiteasrOptimizer
 from liteasr.tasks import LiteasrTask
 from liteasr.utils.data_loader import EpochDataLoader
 from liteasr.utils.device import to_device
+from liteasr.utils.trigger import EventManager
 from liteasr.utils.trigger import Trigger
 
 logger = logging.getLogger(__name__)
@@ -64,10 +65,10 @@ class Trainer(object):
 
         self.device = torch.device("cuda")
 
-        self.triggers = {
-            "loss": Trigger(100, "iteration"),
-            "valid": Trigger(2000, "iteration"),
-        }
+        self.event_manager = EventManager()
+        self.event_manager.add_event(self._report_loss)
+        self.event_manager.add_event(self._valid)
+        self.loss = None
 
     @property
     def model(self):
@@ -120,11 +121,18 @@ class Trainer(object):
 
     def run(self):
         for batch in self.train_iter:
+            # trigger epoch-wise events
+            self.event_manager.trigger_events("epoch")
+
+            # stop training process if reach limit
             if self.stop():
                 break
+
+            # train one step
             batch = to_device(batch, self.device)
 
             loss = self.criterion(self.model, *batch)
+            self.loss = loss
             loss.backward()
             grad_norm = torch.nn.utils.clip_grad_norm_(
                 self.model.parameters(), 5.0
@@ -134,38 +142,41 @@ class Trainer(object):
                 self.iter += 1
             self.optimizer.zero_grad()
 
-            if self.triggers["loss"].is_triggered(self):
-                logger.info(
-                    "{} / {} iters, {} / {} epochs - current loss: {:.2f}".
-                    format(
-                        self.iter,
-                        self.max_iter,
-                        self.epoch,
-                        self.max_epoch,
-                        loss.item(),
-                    )
-                )
+            # trigger iteration-wise events
+            self.event_manager.trigger_events("iteration")
 
-            if self.triggers["valid"].is_triggered(self):
-                self.model.eval()
-                with torch.no_grad():
-                    losses = []
-                    for bat in self.valid_iter:
-                        bat = to_device(bat, self.device)
-                        loss = self.criterion(self.model, *batch)
-                        if self.cfg.distributed.world_size > 1:
-                            dist.reduce(loss, dst=0)
-                            loss /= self.cfg.distributed.world_size
-                        losses.append(loss)
-                    reduced_loss = torch.mean(torch.tensor(losses))
-                    logger.info(
-                        "{} / {} iters, {} / {} epochs - valid loss: {:.2f}".
-                        format(
-                            self.iter,
-                            self.max_iter,
-                            self.epoch,
-                            self.max_epoch,
-                            reduced_loss.item(),
-                        )
-                    )
-                self.model.train()
+    @Trigger(100, "iteration")
+    def _report_loss(self):
+        logger.info(
+            "{} / {} iters, {} / {} epochs - current loss: {:.2f}".format(
+                self.iter,
+                self.max_iter,
+                self.epoch,
+                self.max_epoch,
+                self.loss.item(),
+            )
+        )
+
+    @Trigger(1, "epoch")
+    def _valid(self):
+        self.model.eval()
+        with torch.no_grad():
+            losses = []
+            for bat in self.valid_iter:
+                bat = to_device(bat, self.device)
+                loss = self.criterion(self.model, *bat)
+                if self.cfg.distributed.world_size > 1:
+                    dist.reduce(loss, dst=0)
+                    loss /= self.cfg.distributed.world_size
+                losses.append(loss)
+            reduced_loss = torch.mean(torch.tensor(losses))
+            logger.info(
+                "{} / {} iters, {} / {} epochs - valid loss: {:.2f}".format(
+                    self.iter,
+                    self.max_iter,
+                    self.epoch,
+                    self.max_epoch,
+                    reduced_loss.item(),
+                )
+            )
+        self.model.train()
