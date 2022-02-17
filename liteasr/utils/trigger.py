@@ -4,6 +4,12 @@ from functools import wraps
 
 
 class Trigger(object):
+    """Event trigger object.
+
+    :param int interval: time interval of the triggered event
+    :param str unit: interval unit, either `epoch` or `iteration`
+
+    """
 
     def __init__(self, interval: int, unit: str):
         assert unit in ["epoch", "iteration"]
@@ -30,6 +36,22 @@ class Trigger(object):
 
 
 class EventManager(object):
+    """Manage the triggered event
+
+    :Example:
+
+    >>> # inside `Trainer`
+    >>> self.event_manager = EventManager()
+    >>> self.event_manager.add_event(some_event)
+    >>> self.event_manager.trigger_events("epoch")
+
+    >>> @Trigger(2, "epoch")
+    >>> def some_event(self):
+    >>>     ...
+
+    `some_event` will therefore run each 2 epoch.
+
+    """
 
     def __init__(self):
         self.events = []
