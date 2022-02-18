@@ -42,6 +42,9 @@ class DDPModelWrapper(LiteasrModel):
     def inference(self, x):
         return self.ddp_module.module.inference(x)
 
+    def save(self, model_path):
+        self.ddp_module.module.save(model_path)
+
     def get_pred_len(self, xlens):
         return self.ddp_module.module.get_pred_len(xlens)
 
