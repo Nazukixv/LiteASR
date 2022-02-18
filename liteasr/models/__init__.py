@@ -30,7 +30,7 @@ class LiteasrModel(nn.Module):
         raise NotImplementedError
 
     def save(self, model_path):
-        torch.save(self.cpu(), model_path)
+        torch.save(self, model_path)
 
     def script(self):
         import torch
