@@ -23,13 +23,13 @@ class LiteasrTask(object):
 
     def __init__(self, cfg):
         self.cfg = cfg
-        self.dataset = dict()
+        self.datasets = dict()
 
     def load_dataset(self, split: str, data_cfg, dataset_cfg):
         raise NotImplementedError
 
     def dataset(self, split: str):
-        return self.dataset[split]
+        return self.datasets[split]
 
     def inference(self, x, model: LiteasrModel):
         raise NotImplementedError

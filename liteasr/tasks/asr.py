@@ -5,6 +5,8 @@ import os
 from typing import Optional
 
 from omegaconf import MISSING
+from omegaconf.dictconfig import DictConfig
+from omegaconf.listconfig import ListConfig
 
 from liteasr.config import DatasetConfig
 from liteasr.config import LiteasrDataclass
@@ -51,29 +53,29 @@ class ASRTask(LiteasrTask):
     ):
         assert split in ["train", "valid", "test"]
 
-        if not isinstance(data_cfg, list):
+        if isinstance(data_cfg, DictConfig):
             logger.info(
                 "loading {} data from {}".format(
                     split, os.path.dirname(data_cfg.scp)
                 )
             )
-            self.dataset[split] = AudioFileDataset(
+            self.datasets[split] = AudioFileDataset(
                 scp=data_cfg.scp,
                 segments=data_cfg.segments,
                 text=data_cfg.text,
                 vocab=self.vocab,
                 cfg=dataset_cfg,
             )
-            self.feat_dim = self.dataset[split].feat_dim
-        else:
-            self.dataset[split] = []
+            self.feat_dim = self.datasets[split].feat_dim
+        elif isinstance(data_cfg, ListConfig):
+            self.datasets[split] = []
             for cfg in data_cfg:
                 logger.info(
                     "loading {} data from {}".format(
                         split, os.path.dirname(cfg.scp)
                     )
                 )
-                self.dataset[split].append(
+                self.datasets[split].append(
                     AudioFileDataset(
                         scp=cfg.scp,
                         segments=cfg.segments,
@@ -82,7 +84,11 @@ class ASRTask(LiteasrTask):
                         cfg=dataset_cfg,
                     )
                 )
-            self.feat_dim = self.dataset[split][0].feat_dim
+            self.feat_dim = self.datasets[split][0].feat_dim
+        else:
+            raise TypeError(
+                "data_cfg with type {} cannot be parsed".format(type(data_cfg))
+            )
 
     def inference(self, x, model: LiteasrModel):
         tokenids = model.inference(x)
