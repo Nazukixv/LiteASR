@@ -22,8 +22,6 @@ TASK_CLASS_NAMES = set()
 class LiteasrTask(object):
 
     def __init__(self):
-        self._train_data = []
-        self._valid_data = []
         self.train_set = None
         self.valid_set = None
 
