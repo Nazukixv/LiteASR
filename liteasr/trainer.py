@@ -42,21 +42,21 @@ class Trainer(object):
         self.iter = 0
 
         if self.cfg.distributed.world_size > 1:
-            train_sampler = DistributedSampler(self.task.train_set)
-            valid_sampler = DistributedSampler(self.task.valid_set)
+            train_sampler = DistributedSampler(self.task.dataset("train"))
+            valid_sampler = DistributedSampler(self.task.dataset("valid"))
         else:
             train_sampler = None
             valid_sampler = None
 
         self.train_iter = EpochDataLoader(
-            dataset=self.task.train_set,
+            dataset=self.task.dataset("train"),
             batch_size=1,
             shuffle=(train_sampler is None),
             sampler=train_sampler,
             collate_fn=lambda x: x[0],
         )
         self.valid_iter = DataLoader(
-            dataset=self.task.valid_set,
+            dataset=self.task.dataset("valid"),
             batch_size=1,
             shuffle=(valid_sampler is None),
             sampler=valid_sampler,

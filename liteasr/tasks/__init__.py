@@ -21,12 +21,15 @@ TASK_CLASS_NAMES = set()
 
 class LiteasrTask(object):
 
-    def __init__(self):
-        self.train_set = None
-        self.valid_set = None
+    def __init__(self, cfg):
+        self.cfg = cfg
+        self.dataset = dict()
 
-    def load_data(self, cfg):
+    def load_dataset(self, split: str, data_cfg, dataset_cfg):
         raise NotImplementedError
+
+    def dataset(self, split: str):
+        return self.dataset[split]
 
     def inference(self, x, model: LiteasrModel):
         raise NotImplementedError

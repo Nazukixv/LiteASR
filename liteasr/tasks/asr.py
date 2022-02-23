@@ -36,42 +36,53 @@ class ASRConfig(LiteasrDataclass):
 class ASRTask(LiteasrTask):
 
     def __init__(self, cfg: ASRConfig):
-        super().__init__()
+        super().__init__(cfg)
         self.vocab = Vocab(cfg.vocab)
-        self.train = cfg.train
-        self.valid = cfg.valid
         self.save_dir = cfg.save_dir
 
         self.vocab_size = len(self.vocab)
         self.feat_dim = 0
 
-    def load_data(self, cfg: DatasetConfig):
-        logger.info(
-            "loading training data from {}".format(
-                os.path.dirname(self.train.scp)
-            )
-        )
-        self.train_set = AudioFileDataset(
-            scp=self.train.scp,
-            segments=self.train.segments,
-            text=self.train.text,
-            vocab=self.vocab,
-            cfg=cfg,
-        )
-        self.feat_dim = self.train_set.feat_dim
+    def load_dataset(
+        self,
+        split: str,
+        data_cfg,
+        dataset_cfg: DatasetConfig,
+    ):
+        assert split in ["train", "valid", "test"]
 
-        logger.info(
-            "loading validation data from {}".format(
-                os.path.dirname(self.valid.scp)
+        if not isinstance(data_cfg, list):
+            logger.info(
+                "loading {} data from {}".format(
+                    split, os.path.dirname(data_cfg.scp)
+                )
             )
-        )
-        self.valid_set = AudioFileDataset(
-            scp=self.valid.scp,
-            segments=self.valid.segments,
-            text=self.valid.text,
-            vocab=self.vocab,
-            cfg=cfg,
-        )
+            self.dataset[split] = AudioFileDataset(
+                scp=data_cfg.scp,
+                segments=data_cfg.segments,
+                text=data_cfg.text,
+                vocab=self.vocab,
+                cfg=dataset_cfg,
+            )
+            self.feat_dim = self.dataset[split].feat_dim
+        else:
+            self.dataset[split] = []
+            for cfg in data_cfg:
+                logger.info(
+                    "loading {} data from {}".format(
+                        split, os.path.dirname(cfg.scp)
+                    )
+                )
+                self.dataset[split].append(
+                    AudioFileDataset(
+                        scp=cfg.scp,
+                        segments=cfg.segments,
+                        text=cfg.text,
+                        vocab=self.vocab,
+                        cfg=dataset_cfg,
+                    )
+                )
+            self.feat_dim = self.dataset[split][0].feat_dim
 
     def inference(self, x, model: LiteasrModel):
         tokenids = model.inference(x)
