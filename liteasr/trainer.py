@@ -41,22 +41,25 @@ class Trainer(object):
         self.optimizer = optimizer
         self.iter = 0
 
+        train_set = self.task.dataset("train").batchify(self.cfg.dataset)
+        valid_set = self.task.dataset("valid").batchify(self.cfg.dataset)
+
         if self.cfg.distributed.world_size > 1:
-            train_sampler = DistributedSampler(self.task.dataset("train"))
-            valid_sampler = DistributedSampler(self.task.dataset("valid"))
+            train_sampler = DistributedSampler(train_set)
+            valid_sampler = DistributedSampler(valid_set)
         else:
             train_sampler = None
             valid_sampler = None
 
         self.train_iter = EpochDataLoader(
-            dataset=self.task.dataset("train"),
+            dataset=train_set,
             batch_size=1,
             shuffle=(train_sampler is None),
             sampler=train_sampler,
             collate_fn=lambda x: x[0],
         )
         self.valid_iter = DataLoader(
-            dataset=self.task.dataset("valid"),
+            dataset=valid_set,
             batch_size=1,
             shuffle=(valid_sampler is None),
             sampler=valid_sampler,

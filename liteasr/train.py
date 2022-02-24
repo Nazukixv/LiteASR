@@ -59,8 +59,8 @@ def train(cfg: LiteasrConfig):
 
     # load training data
     logger.info("1. load data...")
-    task.load_dataset("train", task.cfg.train, cfg.dataset)
-    task.load_dataset("valid", task.cfg.valid, cfg.dataset)
+    task.load_dataset("train", task.cfg.train)
+    task.load_dataset("valid", task.cfg.valid)
 
     # build model
     model = task.build_model(cfg.model)

@@ -8,7 +8,6 @@ from omegaconf import MISSING
 from omegaconf.dictconfig import DictConfig
 from omegaconf.listconfig import ListConfig
 
-from liteasr.config import DatasetConfig
 from liteasr.config import LiteasrDataclass
 from liteasr.dataclass.vocab import Vocab
 from liteasr.models import LiteasrModel
@@ -49,7 +48,6 @@ class ASRTask(LiteasrTask):
         self,
         split: str,
         data_cfg,
-        dataset_cfg: DatasetConfig,
     ):
         assert split in ["train", "valid", "test"]
 
@@ -64,7 +62,6 @@ class ASRTask(LiteasrTask):
                 segments=data_cfg.segments,
                 text=data_cfg.text,
                 vocab=self.vocab,
-                cfg=dataset_cfg,
             )
             self.feat_dim = self.datasets[split].feat_dim
         elif isinstance(data_cfg, ListConfig):
@@ -81,7 +78,6 @@ class ASRTask(LiteasrTask):
                         segments=cfg.segments,
                         text=cfg.text,
                         vocab=self.vocab,
-                        cfg=dataset_cfg,
                     )
                 )
             self.feat_dim = self.datasets[split][0].feat_dim
