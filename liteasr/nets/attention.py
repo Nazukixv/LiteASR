@@ -70,3 +70,87 @@ class MultiHeadAttention(nn.Module):
         scores = self.scaling * torch.matmul(q, k.transpose(-2, -1))
         x = self.apply_attention(scores, v, mask=mask)
         return x
+
+
+class RelativeMultiHeadAttention(MultiHeadAttention):
+    """Multi-Head Attention layer with relative positional encoding.
+
+    Paper: https://arxiv.org/abs/1901.02860
+
+    """
+
+    def __init__(
+        self,
+        n_head: int,
+        i_dim: int,
+        dropout_rate: float,
+    ) -> None:
+        super().__init__(n_head, i_dim, dropout_rate)
+
+        # linear transformation for positional ecoding
+        self.linear_pos = nn.Linear(i_dim, i_dim, bias=False)
+
+        # these two learnable bias are used in matrix c and matrix d
+        # as described in https://arxiv.org/abs/1901.02860 Section 3.3
+        self.pos_bias_u = nn.Parameter(torch.Tensor(self.h, self.d_k))
+        self.pos_bias_v = nn.Parameter(torch.Tensor(self.h, self.d_k))
+        torch.nn.init.xavier_uniform_(self.pos_bias_u)
+        torch.nn.init.xavier_uniform_(self.pos_bias_v)
+
+    def rel_shift(self, x, zero_triu: bool = False) -> Tensor:
+        """Compute relative positinal encoding."""
+
+        zero_pad = torch.zeros(
+            (x.size()[:3] + (1,)), device=x.device, dtype=x.dtype
+        )
+        x_padded = torch.cat([zero_pad, x], dim=-1)
+
+        x_padded = x_padded.view(x.size()[:2] + (
+            x.size(3) + 1,
+            x.size(2),
+        ))
+        x = x_padded[:, :, 1:].view_as(x)
+
+        if zero_triu:
+            ones = torch.ones((x.size(2), x.size(3)))
+            x = x * torch.tril(ones, x.size(3) - x.size(2))[None, None, :, :]
+
+        return x
+
+    def forward(
+        self,
+        query,
+        key,
+        value,
+        pos_emb,
+        mask: Optional[Tensor] = None,
+    ) -> Tensor:
+        q, k, v = self.project_qkv(query, key, value)
+        q = q.transpose(1, 2)  # (batch, time1, head, d_k)
+
+        n_batch_pos = pos_emb.size(0)
+        p = self.linear_pos(pos_emb)
+        p = p.view(n_batch_pos, -1, self.h, self.d_k)
+        p = p.transpose(1, 2)  # (batch, head, time1, d_k)
+
+        # (batch, head, time1, d_k)
+        q_with_bias_u = (q + self.pos_bias_u).transpose(1, 2)
+        # (batch, head, time1, d_k)
+        q_with_bias_v = (q + self.pos_bias_v).transpose(1, 2)
+
+        # compute attention score
+        # first compute matrix a and matrix c
+        # as described in https://arxiv.org/abs/1901.02860 Section 3.3
+        # (batch, head, time1, time2)
+        matrix_ac = torch.matmul(q_with_bias_u, k.transpose(-2, -1))
+
+        # compute matrix b and matrix d
+        # (batch, head, time1, time2)
+        matrix_bd = torch.matmul(q_with_bias_v, p.transpose(-2, -1))
+        matrix_bd = self.rel_shift(matrix_bd)
+
+        scores = (
+            matrix_ac + matrix_bd
+        ) * self.scaling  # (batch, head, time1, time2)
+
+        return self.apply_attention(scores, v, mask=mask)
