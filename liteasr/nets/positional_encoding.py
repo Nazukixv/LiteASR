@@ -1,4 +1,5 @@
 import math
+from typing import Tuple
 
 import torch
 from torch import Tensor
@@ -67,7 +68,7 @@ class RelativePositionalEncoding(PositionalEncoding):
     ) -> None:
         super().__init__(h_dim, dropout_rate, max_len)
 
-    def forward(self, x):
+    def forward(self, x) -> Tuple[Tensor, Tensor]:
         if self.pe.size(1) < x.size(1):
             self.extend_pe(x)
         if self.pe.dtype != x.dtype or str(self.pe.device) != str(x.device):
