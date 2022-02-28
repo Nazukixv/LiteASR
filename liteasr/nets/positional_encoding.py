@@ -55,3 +55,23 @@ class PositionalEncoding(nn.Module):
         x = x * self.scale + self.pe[:, :x.size(1)]
         x = self.dropout(x)
         return x
+
+
+class RelativePositionalEncoding(PositionalEncoding):
+
+    def __init__(
+        self,
+        h_dim: int,
+        dropout_rate: float,
+        max_len: int = 5000,
+    ) -> None:
+        super().__init__(h_dim, dropout_rate, max_len)
+
+    def forward(self, x):
+        if self.pe.size(1) < x.size(1):
+            self.extend_pe(x)
+        if self.pe.dtype != x.dtype or str(self.pe.device) != str(x.device):
+            self.pe = self.pe.to(device=x.device, dtype=x.dtype)
+        x = x * self.scale
+        pos_emb = self.pe[:, :x.size(1)]
+        return self.dropout(x), self.dropout(pos_emb)
