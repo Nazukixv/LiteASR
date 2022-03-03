@@ -20,6 +20,9 @@ class CommonConfig(LiteasrDataclass):
 @dataclass
 class DatasetConfig(LiteasrDataclass):
     batch_size: Optional[int] = field(default=None)
+    min_batch_size: Optional[int] = field(default=None)
+    max_len_in: Optional[int] = field(default=None)
+    max_len_out: Optional[int] = field(default=None)
 
 
 @dataclass
