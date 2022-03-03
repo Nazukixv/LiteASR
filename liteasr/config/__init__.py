@@ -35,6 +35,8 @@ class DistributedConfig(LiteasrDataclass):
 class OptimizationConfig(LiteasrDataclass):
     max_epoch: int = field(default=-1)
     max_iter: int = field(default=-1)
+    accum_grad: int = field(default=1)
+    clip_grad_norm: float = field(default=0.0)
 
 
 @dataclass
