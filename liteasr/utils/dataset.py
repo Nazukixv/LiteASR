@@ -15,17 +15,33 @@ logger = logging.getLogger(__name__)
 
 class SortedDataset(Dataset):
 
-    def __init__(self, samples, batch_size):
+    def __init__(self, samples, cfg: DatasetConfig):
         self.data = []
-        self.batch_size = batch_size
+        self.cfg = cfg
         self.batchify(samples)
 
     def batchify(self, samples):
-        while len(self) * self.batch_size < len(samples):
-            self.data.append(
-                samples[len(self) * self.batch_size:(len(self) + 1)
-                        * self.batch_size]
+        samples = sorted(samples, key=lambda a: a.xlen, reverse=True)
+        start = 0
+        while True:
+            ilen = samples[start].xlen
+            olen = samples[start].ylen
+            factor = max(
+                int(ilen / self.cfg.max_len_in),
+                int(olen / self.cfg.max_len_out),
             )
+            bs = max(
+                self.cfg.min_batch_size,
+                int(self.cfg.batch_size / (1 + factor)),
+            )
+            end = min(len(samples), start + bs)
+
+            self.data.append(samples[start:end])
+
+            if end == len(samples):
+                break
+
+            start = end
 
     def __getitem__(self, index):
         audios = self.data[index]
@@ -68,7 +84,7 @@ class AudioFileDataset(Dataset):
         self.feat_dim = self.data[0].shape[-1]
 
     def batchify(self, cfg: DatasetConfig) -> Dataset:
-        return SortedDataset(self.data, cfg.batch_size)
+        return SortedDataset(self.data, cfg)
 
     def __getitem__(self, index):
         """overload [] operator"""
