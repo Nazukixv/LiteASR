@@ -8,6 +8,8 @@ from liteasr.optims.adam import AdamConfig
 
 @dataclass
 class NoamConfig(AdamConfig):
+    beta2: float = field(default=0.98)
+    eps: float = field(default=1e-9)
     model_dim: int = field(default=256)
     factor: float = field(default=1.0)
     warmup: int = field(default=25000)
