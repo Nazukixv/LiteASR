@@ -26,6 +26,20 @@ class DatasetConfig(LiteasrDataclass):
 
 
 @dataclass
+class _SpecAugmentConfig(object):
+    time_warp: int = field(default=80)
+    freq_mask: int = field(default=27)
+    freq_mask_times: int = field(default=1)
+    time_mask: int = field(default=100)
+    time_mask_times: int = field(default=1)
+
+
+@dataclass
+class PostProcessConfig(LiteasrDataclass):
+    spec_aug: _SpecAugmentConfig = _SpecAugmentConfig()
+
+
+@dataclass
 class DistributedConfig(LiteasrDataclass):
     world_size: int = field(default=max(1, torch.cuda.device_count()))
     rank: int = field(default=0)
@@ -46,6 +60,7 @@ class OptimizationConfig(LiteasrDataclass):
 class LiteasrConfig(LiteasrDataclass):
     common: CommonConfig = CommonConfig()
     dataset: DatasetConfig = DatasetConfig()
+    postprocess: PostProcessConfig = PostProcessConfig()
     distributed: DistributedConfig = DistributedConfig()
     optimization: OptimizationConfig = OptimizationConfig()
     task: Any = None
