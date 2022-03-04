@@ -1,6 +1,7 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 import torch
+from torch import Tensor
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -50,13 +51,14 @@ class EncoderLayer(nn.Module):
         self.size = size
         self.normalize_before = normalize_before
 
-    def forward(
+    def mha(
         self,
         x,
-        mask: Optional[torch.Tensor] = None,
-        cache: Optional[torch.Tensor] = None
-    ):
-        # self attention + ResNet
+        mask: Optional[Tensor] = None,
+        cache: Optional[Tensor] = None,
+    ) -> Tensor:
+        """Multi-head Attention + ResNet sublayer."""
+
         residual = x
         x = self.self_attn_norm(x) if self.normalize_before else x
 
@@ -71,11 +73,26 @@ class EncoderLayer(nn.Module):
         x = self.dropout(self.self_attn(x_q, x, x, mask)) + residual
         x = self.self_attn_norm(x) if not self.normalize_before else x
 
-        # feed-forward + ResNet
+        return x
+
+    def ff(self, x) -> Tensor:
+        """Feed-forward + ResNet sublayer."""
+
         residual = x
         x = self.feed_forward_norm(x) if self.normalize_before else x
         x = self.dropout(self.feed_forward(x)) + residual
         x = self.feed_forward_norm(x) if not self.normalize_before else x
+
+        return x
+
+    def forward(
+        self,
+        x,
+        mask: Optional[torch.Tensor] = None,
+        cache: Optional[torch.Tensor] = None
+    ):
+        x = self.mha(x, mask=mask, cache=cache)
+        x = self.ff(x)
 
         # concatenate the cache
         if cache is not None:
@@ -104,15 +121,13 @@ class RelativeEncoderLayer(EncoderLayer):
             concat_after,
         )
 
-    def forward(
+    def mha(
         self,
-        x_pos_emb,
-        mask: Optional[torch.Tensor] = None,
-        cache: Optional[torch.Tensor] = None,
-    ):
-        x, pos_emb = x_pos_emb[0], x_pos_emb[1]
-
-        # self attention + ResNet
+        x,
+        pos_emb,
+        mask: Optional[Tensor] = None,
+        cache: Optional[Tensor] = None,
+    ) -> Tuple[Tensor, Tensor]:
         residual = x
         x = self.self_attn_norm(x) if self.normalize_before else x
 
@@ -127,11 +142,18 @@ class RelativeEncoderLayer(EncoderLayer):
         x = self.dropout(self.self_attn(x_q, x, x, pos_emb, mask)) + residual
         x = self.self_attn_norm(x) if not self.normalize_before else x
 
-        # feed-forward + ResNet
-        residual = x
-        x = self.feed_forward_norm(x) if self.normalize_before else x
-        x = self.dropout(self.feed_forward(x)) + residual
-        x = self.feed_forward_norm(x) if not self.normalize_before else x
+        return x, pos_emb
+
+    def forward(
+        self,
+        x_pos_emb,
+        mask: Optional[Tensor] = None,
+        cache: Optional[Tensor] = None,
+    ):
+        x, pos_emb = x_pos_emb[0], x_pos_emb[1]
+
+        x, pos_emb = self.mha(x, pos_emb, mask=mask, cache=cache)
+        x = self.ff(x)
 
         # concatenate the cache
         if cache is not None:
