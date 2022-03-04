@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from dataclasses import field
 import logging
 import os
-from typing import Optional
+from typing import List, Optional
 
 from omegaconf import MISSING
 from omegaconf.dictconfig import DictConfig
@@ -30,6 +30,7 @@ class ASRConfig(LiteasrDataclass):
     vocab: str = field(default=MISSING)
     train: DataConfig = DataConfig()
     valid: DataConfig = DataConfig()
+    test: List[DataConfig] = field(default_factory=list)
     save_dir: str = field(default=MISSING)
 
 
