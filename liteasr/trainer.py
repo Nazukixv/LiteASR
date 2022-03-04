@@ -1,5 +1,6 @@
 """Trainer."""
 
+from contextlib import nullcontext
 import logging
 import math
 
@@ -80,7 +81,7 @@ class Trainer(object):
         self.event_manager.add_event(self._report_loss)
         self.event_manager.add_event(self._valid)
         self.event_manager.add_event(self._save_model)
-        self.loss = None
+        self.loss = 0
 
     @property
     def model(self):
@@ -132,7 +133,7 @@ class Trainer(object):
         return reach_max_epoch or reach_max_iter
 
     def run(self):
-        for batch in self.train_iter:
+        for i, batch in enumerate(self.train_iter, start=1):
             # trigger epoch-wise events
             self.event_manager.trigger_events("epoch")
 
@@ -143,19 +144,35 @@ class Trainer(object):
             # train one step
             batch = to_device(batch, self.device)
 
-            loss = self.criterion(self.model, *batch)
-            self.loss = loss
-            loss.backward()
-            grad_norm = torch.nn.utils.clip_grad_norm_(
-                self.model.parameters(), 5.0
-            )
-            if not math.isnan(grad_norm):
-                self.optimizer.step()
-                self.iter += 1
-            self.optimizer.zero_grad()
+            if (
+                self.cfg.distributed.world_size > 1
+                and i % self.cfg.optimization.accum_grad != 0
+            ):
+                sync_context = self.model.no_sync
+            else:
+                sync_context = nullcontext
 
-            # trigger iteration-wise events
-            self.event_manager.trigger_events("iteration")
+            with sync_context():
+                loss = self.criterion(
+                    self.model, *batch
+                ) / self.cfg.optimization.accum_grad
+                self.loss += loss
+                loss.backward()
+
+            if i % self.cfg.optimization.accum_grad == 0:
+                grad_norm = torch.nn.utils.clip_grad_norm_(
+                    self.model.parameters(),
+                    self.cfg.optimization.clip_grad_norm,
+                )
+                if not math.isnan(grad_norm):
+                    self.optimizer.step()
+                    self.iter += 1
+
+                    # trigger iteration-wise events
+                    self.event_manager.trigger_events("iteration")
+
+                    self.optimizer.zero_grad()
+                    self.loss = 0
 
     @Trigger(100, "iteration")
     def _report_loss(self):
