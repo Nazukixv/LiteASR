@@ -46,6 +46,9 @@ class LiteasrModel(nn.Module):
     def get_target_len(self, ylens):
         raise NotImplementedError
 
+    def no_sync(self):
+        raise NotImplementedError
+
 
 def build_model(cfg, task) -> LiteasrModel:
     model_name = getattr(cfg, "name", None)

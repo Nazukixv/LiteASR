@@ -53,3 +53,6 @@ class DDPModelWrapper(LiteasrModel):
 
     def get_target_len(self, ylens):
         return self.ddp_module.module.get_target_len(ylens)
+
+    def no_sync(self):
+        return self.ddp_module.no_sync()
