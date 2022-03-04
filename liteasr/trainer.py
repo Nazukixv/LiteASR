@@ -41,8 +41,16 @@ class Trainer(object):
         self.optimizer = optimizer
         self.iter = 0
 
-        train_set = self.task.dataset("train").batchify(self.cfg.dataset)
-        valid_set = self.task.dataset("valid").batchify(self.cfg.dataset)
+        train_set = self.task.dataset("train").batchify(
+            "train",
+            self.cfg.dataset,
+            self.cfg.postprocess,
+        )
+        valid_set = self.task.dataset("valid").batchify(
+            "valid",
+            self.cfg.dataset,
+            self.cfg.postprocess,
+        )
 
         if self.cfg.distributed.world_size > 1:
             train_sampler = DistributedSampler(train_set)
