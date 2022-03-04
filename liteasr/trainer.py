@@ -176,6 +176,9 @@ class Trainer(object):
 
     @Trigger(100, "iteration")
     def _report_loss(self):
+        if self.cfg.distributed.world_size > 1:
+            dist.reduce(self.loss, dst=0)
+            self.loss /= self.cfg.distributed.world_size
         logger.info(
             "{} / {} iters, {} / {} epochs - current loss: {:.2f}".format(
                 self.iter,
