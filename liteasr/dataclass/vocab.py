@@ -65,11 +65,23 @@ class Vocab(object):
         else:
             raise KeyError(f'Key {index} is not valid')
 
+    def convert(self, index):
+        assert isinstance(index, int)
+        if self.id2token[index] in ["<blank>", "<sos/eos>"]:
+            return ""
+        elif self.id2token[index] in ["<space>"]:
+            return " "
+        else:
+            return self.id2token[index]
+
     def __len__(self) -> int:
         return len(self.id2token)
 
-    def lookupi(self, seq: Iterable[Any]):
-        return map(lambda t: self[t], seq)
+    def lookupi(self, seq: Iterable[Any], convert=False):
+        if not convert:
+            return map(lambda t: self[t], seq)
+        else:
+            return map(lambda t: self.convert(t), seq)
 
-    def lookup(self, seq: Iterable[Any]):
-        return list(self.lookupi(seq))
+    def lookup(self, seq: Iterable[Any], convert=False):
+        return list(self.lookupi(seq, convert=convert))

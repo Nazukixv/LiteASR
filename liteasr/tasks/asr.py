@@ -91,8 +91,7 @@ class ASRTask(LiteasrTask):
 
     def inference(self, x, model: LiteasrModel):
         tokenids = model.inference(x)
-        tokens = self.vocab.lookup(tokenids)
-        return ''.join(tokens[1:])
+        return "".join(self.vocab.lookupi(tokenids, convert=True))
 
     def save_model(self, model_name: str, model: LiteasrModel):
         model_path = os.sep.join((self.save_dir, model_name))
