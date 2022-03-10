@@ -63,6 +63,7 @@ class ASRTask(LiteasrTask):
                 segments=data_cfg.segments,
                 text=data_cfg.text,
                 vocab=self.vocab,
+                keep_raw=split == "test",
             )
             self.feat_dim = self.datasets[split].feat_dim
         elif isinstance(data_cfg, ListConfig):
@@ -79,6 +80,7 @@ class ASRTask(LiteasrTask):
                         segments=cfg.segments,
                         text=cfg.text,
                         vocab=self.vocab,
+                        keep_raw=split == "test",
                     )
                 )
             self.feat_dim = self.datasets[split][0].feat_dim

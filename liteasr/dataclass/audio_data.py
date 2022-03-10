@@ -14,6 +14,7 @@ class Audio(object):
     end: Union[int, float]
     shape: List[int]
     tokenids: Optional[List[int]] = None
+    text: Optional[str] = None
 
     @property
     def x(self):

@@ -93,17 +93,21 @@ class AudioFileDataset(Dataset):
         segments: str,
         text: str,
         vocab,
+        keep_raw=False,
     ):
         self.data = []
         _as = AudioSheet(scp=scp, segments=segments)
         _ts = TextSheet(text=text, vocab=vocab)
         for audio_info, text_info in zip(_as, _ts):
             uttid, fd, start, end, shape = audio_info
-            uttid_t, tokenids = text_info
+            uttid_t, tokenids, text = text_info
             assert uttid_t == uttid
-            self.data.append(
-                Audio(uttid, fd, start, end, shape, tokenids=tokenids)
-            )
+            if not keep_raw:
+                info = uttid, fd, start, end, shape, tokenids
+            else:
+                info = uttid, fd, start, end, shape, tokenids, text
+            self.data.append(Audio(*info))
+
             if len(self.data) % 10000 == 0:
                 logger.info("number of loaded data: {}".format(len(self.data)))
         logger.info("number of loaded data: {}".format(len(self.data)))
