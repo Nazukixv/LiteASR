@@ -13,6 +13,8 @@ import torch.nn.functional as F
 from liteasr.config import LiteasrDataclass
 from liteasr.models import LiteasrModel
 from liteasr.models import register_model
+from liteasr.nets.initialization import lecun_normal_init_parameters
+from liteasr.nets.initialization import set_forget_bias_to_one
 from liteasr.nets.rnn_decoder import RNNDecoder
 from liteasr.nets.transformer_encoder import TransformerEncoder
 from liteasr.utils.mask import padding_mask
@@ -83,6 +85,8 @@ class Transducer(LiteasrModel):
         self.lin_jnt = nn.Linear(cfg.joint_dim, cfg.vocab_size)
         self.joint_activation = nn.Tanh()
         self.ignore = -1
+
+        self._init_module()
 
     def forward(
         self,
@@ -225,6 +229,16 @@ class Transducer(LiteasrModel):
         ys_mask = padding_mask([yl + 1 for yl in ylens]).to(device=ys.device)
 
         return xs_in, ys_in, xs_mask, ys_mask
+
+    def _init_module(self):
+        # TODO: support dynamic init afterwards
+        lecun_normal_init_parameters(self.decoder)
+        lecun_normal_init_parameters(self.lin_enc)
+        lecun_normal_init_parameters(self.lin_dec)
+        lecun_normal_init_parameters(self.lin_jnt)
+        self.decoder.embed.weight.data.normal_(0, 1)
+        for i in range(len(self.decoder.dec_layers)):
+            set_forget_bias_to_one(self.decoder.dec_layers[i].bias_ih)
 
     @classmethod
     def build_model(cls, cfg, task=None):
