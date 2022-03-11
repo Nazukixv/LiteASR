@@ -2,9 +2,11 @@
 
 from dataclasses import dataclass
 from dataclasses import field
+from enum import Enum
 from typing import List
 
 from omegaconf import II
+from omegaconf import MISSING
 import torch
 from torch import Tensor
 import torch.nn as nn
@@ -37,6 +39,15 @@ class Hypothesis(object):
         self.state_c = state_c
 
 
+class EncoderArch(Enum):
+    Transformer = "transformer"
+    Conformer = "conformer"
+
+
+class DecoderArch(Enum):
+    LSTM = "lstm"
+
+
 @dataclass
 class TransducerConfig(LiteasrDataclass):
     # transducer
@@ -44,7 +55,9 @@ class TransducerConfig(LiteasrDataclass):
     dropout_rate: float = field(default=0.0)
 
     # encoder
-    input_dim: int = field(default=0)
+    enc_arch: EncoderArch = field(default=EncoderArch.Transformer)
+    use_rel: bool = field(default=True)
+    input_dim: int = field(default=MISSING)
     enc_dim: int = field(default=256)
     enc_ff_dim: int = field(default=2048)
     enc_attn_heads: int = field(default=4)
@@ -53,7 +66,8 @@ class TransducerConfig(LiteasrDataclass):
     activation: str = field(default="relu")
 
     # decoder
-    vocab_size: int = field(default=0)
+    dec_arch: DecoderArch = field(default=DecoderArch.LSTM)
+    vocab_size: int = field(default=MISSING)
     dec_dim: int = field(default=256)
     dec_units: int = field(default=2048)
     dec_dropout_rate: float = II("model.dropout_rate")
@@ -65,21 +79,28 @@ class Transducer(LiteasrModel):
 
     def __init__(self, cfg: TransducerConfig, task=None):
         super().__init__()
-        self.encoder = TransformerEncoder(
-            i_dim=cfg.input_dim,
-            h_dim=cfg.enc_dim,
-            ff_dim=cfg.enc_ff_dim,
-            n_head=cfg.enc_attn_heads,
-            n_layer=cfg.enc_layers,
-            dropout_rate=cfg.enc_dropout_rate,
-        )
-        self.decoder = RNNDecoder(
-            i_dim=cfg.vocab_size,
-            h_dim=cfg.dec_dim,
-            h_units=cfg.dec_units,
-            n_layer=cfg.dec_layers,
-            dropout_rate=cfg.dec_dropout_rate,
-        )
+
+        if cfg.enc_arch in [EncoderArch.Transformer, EncoderArch.Conformer]:
+            self.encoder = TransformerEncoder(
+                use_rel=cfg.use_rel,
+                i_dim=cfg.input_dim,
+                h_dim=cfg.enc_dim,
+                ff_dim=cfg.enc_ff_dim,
+                n_head=cfg.enc_attn_heads,
+                n_layer=cfg.enc_layers,
+                dropout_rate=cfg.enc_dropout_rate,
+                arch=cfg.enc_arch.value,
+            )
+
+        if cfg.dec_arch == DecoderArch.LSTM:
+            self.decoder = RNNDecoder(
+                i_dim=cfg.vocab_size,
+                h_dim=cfg.dec_dim,
+                h_units=cfg.dec_units,
+                n_layer=cfg.dec_layers,
+                dropout_rate=cfg.dec_dropout_rate,
+            )
+
         self.lin_enc = nn.Linear(cfg.enc_dim, cfg.joint_dim)
         self.lin_dec = nn.Linear(cfg.dec_units, cfg.joint_dim, bias=False)
         self.lin_jnt = nn.Linear(cfg.joint_dim, cfg.vocab_size)

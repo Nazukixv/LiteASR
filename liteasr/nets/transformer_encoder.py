@@ -6,39 +6,82 @@ from torch import Tensor
 import torch.nn as nn
 
 from liteasr.nets.attention import MultiHeadAttention
+from liteasr.nets.attention import RelativeMultiHeadAttention
+from liteasr.nets.conformer_convolution import Convolution
+from liteasr.nets.conformer_layer import EncoderLayer as ConformerEncoderLayer
+from liteasr.nets.conformer_layer import \
+    RelativeEncoderLayer as RelativeConformerEncoderLayer
 from liteasr.nets.feed_forward import PositionwiseFeedForward
 from liteasr.nets.positional_encoding import PositionalEncoding
+from liteasr.nets.positional_encoding import RelativePositionalEncoding
 from liteasr.nets.subsampling import Conv2DLayer
-from liteasr.nets.transformer_layer import EncoderLayer
+from liteasr.nets.transformer_layer import \
+    EncoderLayer as TransformerEncoderLayer
 from liteasr.nets.transformer_layer import LayerNorm
+from liteasr.nets.transformer_layer import \
+    RelativeEncoderLayer as RelativeTransformerEncoderLayer
 
 
 class TransformerEncoder(nn.Module):
 
     def __init__(
         self,
+        use_rel: bool,
         i_dim: int,
         h_dim: int,
         ff_dim: int,
         n_head: int,
         n_layer: int,
         dropout_rate: float,
+        arch: str,
     ) -> None:
         super().__init__()
         self.embed = Conv2DLayer(i_dim, h_dim, dropout_rate)
-        self.pe = PositionalEncoding(h_dim, dropout_rate)
-        self.enc_layers = nn.ModuleList(
-            [
-                EncoderLayer(
-                    size=h_dim,
-                    self_attn=MultiHeadAttention(n_head, h_dim, dropout_rate),
-                    feed_forward=PositionwiseFeedForward(
-                        h_dim, ff_dim, dropout_rate
-                    ),
-                    dropout_rate=dropout_rate,
-                ) for _ in range(n_layer)
-            ]
-        )
+
+        pe = RelativePositionalEncoding if use_rel else PositionalEncoding
+        mha = RelativeMultiHeadAttention if use_rel else MultiHeadAttention
+
+        self.pe = pe(h_dim, dropout_rate=0.0)
+
+        if arch == "transformer":
+            tfm_layer = (
+                RelativeTransformerEncoderLayer
+                if use_rel else TransformerEncoderLayer
+            )
+            self.enc_layers = nn.ModuleList(
+                [
+                    tfm_layer(
+                        size=h_dim,
+                        self_attn=mha(n_head, h_dim, dropout_rate),
+                        feed_forward=PositionwiseFeedForward(
+                            h_dim, ff_dim, dropout_rate=0.0
+                        ),
+                        dropout_rate=0.0,
+                    ) for _ in range(n_layer)
+                ]
+            )
+        elif arch == "conformer":
+            cfm_layer = (
+                RelativeConformerEncoderLayer
+                if use_rel else ConformerEncoderLayer
+            )
+            self.enc_layers = nn.ModuleList(
+                [
+                    cfm_layer(
+                        size=h_dim,
+                        self_attn=mha(n_head, h_dim, dropout_rate),
+                        feed_forward=PositionwiseFeedForward(
+                            h_dim, ff_dim, dropout_rate=0.0
+                        ),
+                        feed_forward_macaron=PositionwiseFeedForward(
+                            h_dim, ff_dim, dropout_rate=0.0
+                        ),
+                        conv=Convolution(h_dim, 15),
+                        dropout_rate=0.0,
+                    ) for _ in range(n_layer)
+                ]
+            )
+
         self.after_norm = LayerNorm(h_dim)
 
     def forward(self, x, mask: Optional[Tensor] = None):
@@ -57,5 +100,8 @@ class TransformerEncoder(nn.Module):
             mask = mask.view(b, 1, 1, d)
         for n, layer in enumerate(self.enc_layers):
             x = layer(x, mask=mask)
+
+        if isinstance(x, tuple):
+            x = x[0]
         x = self.after_norm(x)
         return x
