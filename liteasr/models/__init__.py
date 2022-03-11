@@ -60,7 +60,13 @@ def build_model(cfg, task) -> LiteasrModel:
     merged_cfg.__dict__["_parent"] = cfg.__dict__["_parent"]
     OmegaConf.set_struct(merged_cfg, True)
 
-    return model.build_model(merged_cfg, task)
+    built_model = model.build_model(merged_cfg, task)
+
+    # model building process will update some of the config
+    # here we need to copy the updated config content
+    cfg.__dict__["_content"] = merged_cfg.__dict__["_content"]
+
+    return built_model
 
 
 def register_model(name, dataclass=None):

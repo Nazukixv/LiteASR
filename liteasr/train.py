@@ -76,6 +76,9 @@ def train(cfg: LiteasrConfig):
     criter = task.build_criterion(cfg.criterion)
     logger.info("4. build criterion: {}".format(criter.__class__.__name__))
 
+    # show final config
+    logger.debug("model training config:\n{}".format(OmegaConf.to_yaml(cfg)))
+
     trainer = Trainer(cfg, task, model, criter, optim)
     trainer.run()
 
