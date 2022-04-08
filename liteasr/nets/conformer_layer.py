@@ -135,7 +135,7 @@ class RelativeEncoderLayer(EncoderLayer):
 
     def forward(
         self,
-        x_pos_emb,
+        x_pos_emb: Tuple[Tensor, Tensor],
         mask: Optional[Tensor] = None,
         cache: Optional[Tensor] = None,
     ):
