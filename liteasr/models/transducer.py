@@ -80,26 +80,26 @@ class Transducer(LiteasrModel):
     def __init__(self, cfg: TransducerConfig, task=None):
         super().__init__()
 
-        if cfg.enc_arch in [EncoderArch.Transformer, EncoderArch.Conformer]:
-            self.encoder = TransformerEncoder(
-                use_rel=cfg.use_rel,
-                i_dim=cfg.input_dim,
-                h_dim=cfg.enc_dim,
-                ff_dim=cfg.enc_ff_dim,
-                n_head=cfg.enc_attn_heads,
-                n_layer=cfg.enc_layers,
-                dropout_rate=cfg.enc_dropout_rate,
-                arch=cfg.enc_arch.value,
-            )
+        assert cfg.enc_arch in EncoderArch
+        self.encoder = TransformerEncoder(
+            use_rel=cfg.use_rel,
+            i_dim=cfg.input_dim,
+            h_dim=cfg.enc_dim,
+            ff_dim=cfg.enc_ff_dim,
+            n_head=cfg.enc_attn_heads,
+            n_layer=cfg.enc_layers,
+            dropout_rate=cfg.enc_dropout_rate,
+            arch=cfg.enc_arch.value,
+        )
 
-        if cfg.dec_arch == DecoderArch.LSTM:
-            self.decoder = RNNDecoder(
-                i_dim=cfg.vocab_size,
-                h_dim=cfg.dec_dim,
-                h_units=cfg.dec_units,
-                n_layer=cfg.dec_layers,
-                dropout_rate=cfg.dec_dropout_rate,
-            )
+        assert cfg.dec_arch in DecoderArch
+        self.decoder = RNNDecoder(
+            i_dim=cfg.vocab_size,
+            h_dim=cfg.dec_dim,
+            h_units=cfg.dec_units,
+            n_layer=cfg.dec_layers,
+            dropout_rate=cfg.dec_dropout_rate,
+        )
 
         self.lin_enc = nn.Linear(cfg.enc_dim, cfg.joint_dim)
         self.lin_dec = nn.Linear(cfg.dec_units, cfg.joint_dim, bias=False)
