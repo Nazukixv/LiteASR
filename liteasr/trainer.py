@@ -77,10 +77,7 @@ class Trainer(object):
 
         self.device = torch.device("cuda")
 
-        self.event_manager = EventManager()
-        self.event_manager.add_event(self._report_loss)
-        self.event_manager.add_event(self._valid)
-        self.event_manager.add_event(self._save_model)
+        self._add_events()
         self.loss = 0
 
     @property
@@ -115,6 +112,17 @@ class Trainer(object):
         else:
             return "inf"
 
+    def _add_events(self):
+        trigger_store = {}
+        for t in self.cfg.common.trigger:
+            trigger_store[t.key] = Trigger(t.interval, t.unit)
+
+        self.event_manager = EventManager()
+        for key in trigger_store:
+            if hasattr(self, key):
+                event = trigger_store[key](getattr(self, key))
+                self.event_manager.add_event(event)
+
     def is_master(self):
         if self.cfg.distributed.world_size > 1:
             return dist.get_rank() == 0
@@ -135,7 +143,7 @@ class Trainer(object):
     def run(self):
         for i, batch in enumerate(self.train_iter, start=1):
             # trigger epoch-wise events
-            self.event_manager.trigger_events("epoch")
+            self.event_manager.trigger_epoch_events(self)
 
             # stop training process if reach limit
             if self.stop():
@@ -169,13 +177,12 @@ class Trainer(object):
                     self.iter += 1
 
                     # trigger iteration-wise events
-                    self.event_manager.trigger_events("iteration")
+                    self.event_manager.trigger_iteration_events(self)
 
                     self.optimizer.zero_grad()
                     self.loss = 0
 
-    @Trigger(100, "iteration")
-    def _report_loss(self):
+    def report_loss(self):
         if self.cfg.distributed.world_size > 1:
             dist.reduce(self.loss, dst=0)
             self.loss /= self.cfg.distributed.world_size
@@ -189,8 +196,7 @@ class Trainer(object):
             )
         )
 
-    @Trigger(1, "epoch")
-    def _valid(self):
+    def valid(self):
         self.model.eval()
         with torch.no_grad():
             losses = []
@@ -213,8 +219,7 @@ class Trainer(object):
             )
         self.model.train()
 
-    @Trigger(1, "epoch")
-    def _save_model(self):
+    def save_model(self):
         if self.is_master():
             model_name = "model.ep.{}.pt".format(self.epoch)
             self.task.save_model(model_name, self.model)

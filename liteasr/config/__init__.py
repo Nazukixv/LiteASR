@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from dataclasses import field
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 import torch
 
@@ -13,8 +13,16 @@ class LiteasrDataclass(object):
 
 
 @dataclass
+class _TriggerConfig(LiteasrDataclass):
+    key: str = field(default="")
+    interval: int = field(default=1)
+    unit: str = field(default="epoch")
+
+
+@dataclass
 class CommonConfig(LiteasrDataclass):
     seed: int = field(default=1)
+    trigger: List[_TriggerConfig] = field(default_factory=lambda: [])
 
 
 @dataclass

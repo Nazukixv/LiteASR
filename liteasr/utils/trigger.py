@@ -30,7 +30,7 @@ class Trigger(object):
         @wraps(event)
         def wrapper(trainer, unit):
             if self.is_triggered(trainer, unit):
-                event(trainer)
+                event()
 
         return wrapper
 
@@ -40,13 +40,10 @@ class EventManager(object):
 
     :Example:
 
-    >>> # inside `Trainer`
-    >>> self.event_manager = EventManager()
-    >>> self.event_manager.add_event(some_event)
-    >>> self.event_manager.trigger_events("epoch")
-
-    >>> @Trigger(2, "epoch")
-    >>> def some_event(self):
+    >>> class Trainer(object):
+    >>>     ...
+    >>>     @Trigger(2, "epoch")
+    >>>     def some_event(self):
     >>>     ...
 
     `some_event` will therefore run each 2 epoch.
@@ -59,6 +56,12 @@ class EventManager(object):
     def add_event(self, event):
         self.events.append(event)
 
-    def trigger_events(self, unit):
+    def _trigger_events(self, trainer, unit):
         for event in self.events:
-            event(unit)
+            event(trainer, unit)
+
+    def trigger_epoch_events(self, trainer):
+        self._trigger_events(trainer, "epoch")
+
+    def trigger_iteration_events(self, trainer):
+        self._trigger_events(trainer, "iteration")
