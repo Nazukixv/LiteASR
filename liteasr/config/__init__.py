@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from dataclasses import field
 from typing import Any, List, Optional
 
+from omegaconf import II
+from omegaconf import MISSING
 import torch
 
 
@@ -65,12 +67,22 @@ class OptimizationConfig(LiteasrDataclass):
 
 
 @dataclass
+class InferenceConfig(LiteasrDataclass):
+    ckpt_path: str = II("task.save_dir")
+    ckpt_name: Optional[str] = field(default=MISSING)
+    model_avg: bool = field(default=False)
+    avg_num: int = field(default=1)
+    thread_num: int = field(default=32)
+
+
+@dataclass
 class LiteasrConfig(LiteasrDataclass):
     common: CommonConfig = CommonConfig()
     dataset: DatasetConfig = DatasetConfig()
     postprocess: PostProcessConfig = PostProcessConfig()
     distributed: DistributedConfig = DistributedConfig()
     optimization: OptimizationConfig = OptimizationConfig()
+    inference: InferenceConfig = InferenceConfig()
     task: Any = None
     model: Any = None
     criterion: Any = None
