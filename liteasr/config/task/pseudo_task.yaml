@@ -1,0 +1,23 @@
+defaults:
+  - asr
+
+name: asr
+
+vocab: /path/of/vocab
+
+train:
+  scp: /path/of/kaldi/style/train/feats.scp
+  segments: /path/of/kaldi/style/train/segments
+  text: /path/of/kaldi/style/train/text.split
+
+valid:
+  scp: /path/of/kaldi/style/valid/feats.scp
+  segments: /path/of/kaldi/style/valid/segments
+  text: /path/of/kaldi/style/valid/text.split
+
+test:
+  - scp: /path/of/kaldi/style/test/feats.scp
+    segments: /path/of/kaldi/style/test/segments
+    text: /path/of/kaldi/style/test/text.split
+
+save_dir: /path/of/checkpoints/saving/directory
