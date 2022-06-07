@@ -178,9 +178,15 @@ class Trainer(object):
 
                     # trigger iteration-wise events
                     self.event_manager.trigger_iteration_events(self)
+                else:
+                    if self.is_master():
+                        logger.warning(
+                            "iteration {} is skipped since gradient is NaN".
+                            format(self.iter + 1)
+                        )
 
-                    self.optimizer.zero_grad()
-                    self.loss = 0
+                self.optimizer.zero_grad()
+                self.loss = 0
 
     def report_loss(self):
         if self.cfg.distributed.world_size > 1:
