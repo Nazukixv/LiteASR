@@ -33,6 +33,9 @@ class TransformerEncoder(nn.Module):
         n_head: int,
         n_layer: int,
         dropout_rate: float,
+        pos_dropout_rate: float,
+        attn_dropout_rate: float,
+        ff_dropout_rate: float,
         arch: str,
     ) -> None:
         super().__init__()
@@ -41,7 +44,7 @@ class TransformerEncoder(nn.Module):
         pe = RelativePositionalEncoding if use_rel else PositionalEncoding
         mha = RelativeMultiHeadAttention if use_rel else MultiHeadAttention
 
-        self.pe = pe(h_dim, dropout_rate=0.0)
+        self.pe = pe(h_dim, dropout_rate=pos_dropout_rate)
 
         if arch == "transformer":
             tfm_layer = (
@@ -52,11 +55,13 @@ class TransformerEncoder(nn.Module):
                 [
                     tfm_layer(
                         size=h_dim,
-                        self_attn=mha(n_head, h_dim, dropout_rate),
+                        self_attn=mha(n_head, h_dim, attn_dropout_rate),
                         feed_forward=PositionwiseFeedForward(
-                            h_dim, ff_dim, dropout_rate=0.0
+                            h_dim,
+                            ff_dim,
+                            dropout_rate=ff_dropout_rate,
                         ),
-                        dropout_rate=0.0,
+                        dropout_rate=dropout_rate,
                     ) for _ in range(n_layer)
                 ]
             )
@@ -69,15 +74,19 @@ class TransformerEncoder(nn.Module):
                 [
                     cfm_layer(
                         size=h_dim,
-                        self_attn=mha(n_head, h_dim, dropout_rate),
+                        self_attn=mha(n_head, h_dim, attn_dropout_rate),
                         feed_forward=PositionwiseFeedForward(
-                            h_dim, ff_dim, dropout_rate=0.0
+                            h_dim,
+                            ff_dim,
+                            dropout_rate=ff_dropout_rate,
                         ),
                         feed_forward_macaron=PositionwiseFeedForward(
-                            h_dim, ff_dim, dropout_rate=0.0
+                            h_dim,
+                            ff_dim,
+                            dropout_rate=ff_dropout_rate,
                         ),
                         conv=Convolution(h_dim, 15),
-                        dropout_rate=0.0,
+                        dropout_rate=dropout_rate,
                     ) for _ in range(n_layer)
                 ]
             )

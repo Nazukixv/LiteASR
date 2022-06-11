@@ -62,6 +62,9 @@ class TransducerConfig(LiteasrDataclass):
     enc_ff_dim: int = field(default=2048)
     enc_attn_heads: int = field(default=4)
     enc_dropout_rate: float = II("model.dropout_rate")
+    enc_pos_dropout_rate: float = II("model.enc_dropout_rate")
+    enc_attn_dropout_rate: float = II("model.enc_dropout_rate")
+    enc_ff_dropout_rate: float = II("model.enc_dropout_rate")
     enc_layers: int = field(default=4)
     activation: str = field(default="relu")
 
@@ -89,6 +92,9 @@ class Transducer(LiteasrModel):
             n_head=cfg.enc_attn_heads,
             n_layer=cfg.enc_layers,
             dropout_rate=cfg.enc_dropout_rate,
+            pos_dropout_rate=cfg.enc_pos_dropout_rate,
+            attn_dropout_rate=cfg.enc_attn_dropout_rate,
+            ff_dropout_rate=cfg.enc_ff_dropout_rate,
             arch=cfg.enc_arch.value,
         )
 
