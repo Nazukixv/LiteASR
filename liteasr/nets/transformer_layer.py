@@ -136,3 +136,89 @@ class RelativeEncoderLayer(EncoderLayer):
             x = torch.cat([cache, x], dim=1)
 
         return x, pos_emb
+
+
+class DecoderLayer(EncoderLayer):
+
+    def __init__(
+        self,
+        size,
+        self_attn,
+        src_attn,
+        feed_forward,
+        dropout_rate,
+        normalize_before=True,
+        concat_after=False,
+    ):
+        super().__init__(
+            size,
+            self_attn,
+            feed_forward,
+            dropout_rate,
+            normalize_before,
+            concat_after,
+        )
+        self.src_attn = src_attn
+        self.src_attn_norm = LayerNorm(size)
+
+    def src_mha(
+        self,
+        y,
+        mask,
+        memory,
+        memory_mask,
+        cache: Optional[Tensor] = None,
+    ):
+        """Encoder-Decoder Multi-head Attention + ResNet sublayer."""
+
+        residual = y
+        y = self.src_attn_norm(y) if self.normalize_before else y
+        y = self.dropout(self.src_attn(y, memory, memory, memory_mask))
+        y = y + residual
+        y = self.src_attn_norm(y) if not self.normalize_before else y
+
+        return y
+
+    def forward(
+        self,
+        y,
+        mask,
+        memory,
+        memory_mask,
+        cache: Optional[Tensor] = None,
+    ):
+        """Forward.
+
+        :param y: (batch, length_max, feature)
+        :type y: Tensor
+        :param mask: (batch, 1, length_max, length_max)
+        :type mask: Tensor
+        :param memory: (batch, time_max, feature)
+        :type memory: Tensor
+        :param memory_mask: (batch, 1, 1, time_max)
+        :type memory_mask: Tensor
+        :param cache: ???, defaults to None
+        :type cache: Tensor, optional
+
+        """
+
+        # cache     Yes         No
+        #   y
+        #   ↓    [B, L, D]  [B, L, D]
+        #  mha
+        #   ↓    [B, L, D]  [B, 1, D]
+        # edmha
+        #   ↓    [B, L, D]  [B, 1, D]
+        #  f-f
+        #   ↓    [B, L, D]  [B, 1, D]
+        #  cat
+        #   ↓    [B, L, D]  [B, L, D]
+        y = self.mha(y, mask=mask, cache=cache)
+        y = self.src_mha(y, mask, memory, memory_mask, cache=cache)
+        y = self.ff(y)
+
+        # concatenate the cache
+        if cache is not None:
+            y = torch.cat([cache, y], dim=1)
+
+        return y
