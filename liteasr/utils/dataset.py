@@ -89,15 +89,13 @@ class AudioFileDataset(Dataset):
 
     def __init__(
         self,
-        scp: str,
-        segments: str,
-        text: str,
+        data_cfg: str,
         vocab,
         keep_raw=False,
     ):
         self.data = []
-        _as = AudioSheet(scp=scp, segments=segments)
-        _ts = TextSheet(text=text, vocab=vocab)
+        _as = AudioSheet(data_cfg)
+        _ts = TextSheet(data_cfg, vocab=vocab)
         for audio_info, text_info in zip(_as, _ts):
             uttid, fd, start, end, shape = audio_info
             uttid_t, tokenids, text = text_info

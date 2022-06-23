@@ -5,7 +5,6 @@ import os
 from typing import List, Optional
 
 from omegaconf import MISSING
-from omegaconf.dictconfig import DictConfig
 from omegaconf.listconfig import ListConfig
 
 from liteasr.config import LiteasrDataclass
@@ -28,9 +27,9 @@ class DataConfig(object):
 @dataclass
 class ASRConfig(LiteasrDataclass):
     vocab: str = field(default=MISSING)
-    train: DataConfig = DataConfig()
-    valid: DataConfig = DataConfig()
-    test: List[DataConfig] = field(default_factory=list)
+    train: str = field(default=MISSING)
+    valid: str = field(default=MISSING)
+    test: List[str] = field(default_factory=list)
     save_dir: str = field(default=MISSING)
 
 
@@ -52,16 +51,10 @@ class ASRTask(LiteasrTask):
     ):
         assert split in ["train", "valid", "test"]
 
-        if isinstance(data_cfg, DictConfig):
-            logger.info(
-                "loading {} data from {}".format(
-                    split, os.path.dirname(data_cfg.scp)
-                )
-            )
+        if isinstance(data_cfg, str):
+            logger.info("loading {} data from {}".format(split, data_cfg))
             self.datasets[split] = AudioFileDataset(
-                scp=data_cfg.scp,
-                segments=data_cfg.segments,
-                text=data_cfg.text,
+                data_cfg=data_cfg,
                 vocab=self.vocab,
                 keep_raw=split == "test",
             )
@@ -69,16 +62,10 @@ class ASRTask(LiteasrTask):
         elif isinstance(data_cfg, ListConfig):
             self.datasets[split] = []
             for cfg in data_cfg:
-                logger.info(
-                    "loading {} data from {}".format(
-                        split, os.path.dirname(cfg.scp)
-                    )
-                )
+                logger.info("loading {} data from {}".format(split, cfg))
                 self.datasets[split].append(
                     AudioFileDataset(
-                        scp=cfg.scp,
-                        segments=cfg.segments,
-                        text=cfg.text,
+                        data_cfg=cfg,
                         vocab=self.vocab,
                         keep_raw=split == "test",
                     )
