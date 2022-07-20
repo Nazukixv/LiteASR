@@ -14,7 +14,7 @@ from liteasr.models import LiteasrModel
 
 
 @dataclass
-class HybirdCTCLossConfig(LiteasrDataclass):
+class HybridCTCLossConfig(LiteasrDataclass):
     vocab_size: int = field(default=MISSING)
     padding_idx: int = field(default=-1)
     smoothing: float = field(default=0.0)
@@ -22,10 +22,10 @@ class HybirdCTCLossConfig(LiteasrDataclass):
     ctc_weight: float = field(default=0.0)
 
 
-@register_criterion("hybrid_ctc", dataclass=HybirdCTCLossConfig)
-class HybirdCTCLoss(LiteasrLoss):
+@register_criterion("hybrid_ctc", dataclass=HybridCTCLossConfig)
+class HybridCTCLoss(LiteasrLoss):
 
-    def __init__(self, cfg: HybirdCTCLossConfig, task=None):
+    def __init__(self, cfg: HybridCTCLossConfig, task=None):
         super().__init__(cfg)
         self._loss_attn = nn.KLDivLoss(reduction="none")
         self._loss_ctc = nn.CTCLoss(reduction="sum")
