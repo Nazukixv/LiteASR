@@ -1,7 +1,7 @@
 """U2."""
 
+from collections import defaultdict
 from dataclasses import dataclass
-from dataclasses import defaultdict
 from dataclasses import field
 from enum import Enum
 import math
