@@ -61,7 +61,6 @@ class BatchfiedDataset(Dataset):
 
         self.data.append(self.minibatch)
         self.minibatch = []
-        self.refresh()
 
     def refresh(self):
         """Refresh the state of minibatch."""
@@ -69,13 +68,17 @@ class BatchfiedDataset(Dataset):
         raise NotImplementedError
 
     def batchify(self, samples):
+        self.refresh()
         for sample in samples:
+            self.sample = sample
             if self.full:
                 self.pop()
+                self.refresh()
             self.push(sample)
 
         if not self.empty:
             self.pop()
+            self.refresh()
 
     def __getitem__(self, index):
         audios = self.data[index]
@@ -107,8 +110,6 @@ class SeqDataset(BatchfiedDataset):
         postprocess_cfg: PostProcessConfig,
     ):
         super().__init__(samples, split, dataset_cfg, postprocess_cfg)
-        self.factor = 0
-        self.dynamic_batch_size = self.dataset_cfg.batch_size
 
         samples = sorted(samples, key=lambda a: a.xlen, reverse=True)
         self.batchify(samples)
