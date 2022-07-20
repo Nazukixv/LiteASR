@@ -48,7 +48,7 @@ class U2Config(LiteasrDataclass):
     enc_attn_dropout_rate: float = II("model.enc_dropout_rate")
     enc_ff_dropout_rate: float = II("model.enc_dropout_rate")
     enc_layers: int = field(default=12)
-    activation: str = field(default="relu")
+    activation: str = field(default="swish")
 
     # attention decoder
     dec_arch: DecoderArch = field(default=DecoderArch.Transformer)
@@ -82,6 +82,7 @@ class U2(LiteasrModel):
             pos_dropout_rate=cfg.enc_pos_dropout_rate,
             attn_dropout_rate=cfg.enc_attn_dropout_rate,
             ff_dropout_rate=cfg.enc_ff_dropout_rate,
+            activation=cfg.activation,
             arch=cfg.enc_arch.value,
         )
 

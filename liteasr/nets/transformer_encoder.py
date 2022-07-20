@@ -15,6 +15,7 @@ from liteasr.nets.feed_forward import PositionwiseFeedForward
 from liteasr.nets.positional_encoding import PositionalEncoding
 from liteasr.nets.positional_encoding import RelativePositionalEncoding
 from liteasr.nets.subsampling import Conv2DLayer
+from liteasr.nets.swish import Swish
 from liteasr.nets.transformer_layer import \
     EncoderLayer as TransformerEncoderLayer
 from liteasr.nets.transformer_layer import LayerNorm
@@ -36,6 +37,7 @@ class TransformerEncoder(nn.Module):
         pos_dropout_rate: float,
         attn_dropout_rate: float,
         ff_dropout_rate: float,
+        activation: str,
         arch: str,
     ) -> None:
         super().__init__()
@@ -70,6 +72,12 @@ class TransformerEncoder(nn.Module):
                 RelativeConformerEncoderLayer
                 if use_rel else ConformerEncoderLayer
             )
+
+            if activation == "relu":
+                activation_f = nn.ReLU()
+            elif activation == "swish":
+                activation_f = Swish()
+
             self.enc_layers = nn.ModuleList(
                 [
                     cfm_layer(
@@ -79,13 +87,15 @@ class TransformerEncoder(nn.Module):
                             h_dim,
                             ff_dim,
                             dropout_rate=ff_dropout_rate,
+                            activation=activation_f,
                         ),
                         feed_forward_macaron=PositionwiseFeedForward(
                             h_dim,
                             ff_dim,
                             dropout_rate=ff_dropout_rate,
+                            activation=activation_f,
                         ),
-                        conv=Convolution(h_dim, 15),
+                        conv=Convolution(h_dim, 15, activation=activation_f),
                         dropout_rate=dropout_rate,
                     ) for _ in range(n_layer)
                 ]
