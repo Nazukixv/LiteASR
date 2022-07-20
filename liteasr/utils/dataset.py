@@ -9,6 +9,7 @@ from liteasr.config import PostProcessConfig
 from liteasr.dataclass.audio_data import Audio
 from liteasr.dataclass.sheet import AudioSheet
 from liteasr.dataclass.sheet import TextSheet
+from liteasr.utils.batchify import FrameDataset
 from liteasr.utils.batchify import SeqDataset
 
 logger = logging.getLogger(__name__)
@@ -46,7 +47,15 @@ class AudioFileDataset(Dataset):
         dataset_cfg: DatasetConfig,
         postprocess_cfg: PostProcessConfig,
     ) -> Dataset:
-        return SeqDataset(
+        if dataset_cfg.batch_count == "seq":
+            BatchfiedDataset = SeqDataset
+        elif dataset_cfg.batch_count == "frame":
+            BatchfiedDataset = FrameDataset
+        else:
+            logger.error(f"unsupport strategy {dataset_cfg.batch_count}")
+            raise ValueError
+
+        return BatchfiedDataset(
             samples=self.data,
             split=split,
             dataset_cfg=dataset_cfg,

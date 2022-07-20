@@ -140,3 +140,50 @@ class SeqDataset(BatchfiedDataset):
                 self.dataset_cfg.min_batch_size,
                 int(self.dataset_cfg.batch_size / (1 + self.factor)),
             )
+
+
+class FrameDataset(BatchfiedDataset):
+
+    def __init__(
+        self,
+        samples,
+        split: str,
+        dataset_cfg: DatasetConfig,
+        postprocess_cfg: PostProcessConfig,
+    ):
+        super().__init__(samples, split, dataset_cfg, postprocess_cfg)
+
+        samples = sorted(samples, key=lambda a: a.xlen, reverse=True)
+        self.batchify(samples)
+
+    @property
+    def full(self):
+        max_ilen = max(self.max_ilen, self.sample.xlen)
+        max_olen = max(self.max_olen, self.sample.ylen)
+        exp_size = len(self.minibatch) + 1
+
+        # in full
+        if max_ilen * exp_size > self.dataset_cfg.max_frame_in:
+            return True
+        # out full
+        elif max_olen * exp_size > self.dataset_cfg.max_frame_out:
+            return True
+        # inout full
+        elif (
+            max_ilen + max_olen
+        ) * exp_size > self.dataset_cfg.max_frame_inout:
+            return True
+        else:
+            return False
+
+    def push(self, sample):
+        self.minibatch.append(sample)
+        self.refresh()
+
+    def refresh(self):
+        if self.empty:
+            self.max_ilen = 0
+            self.max_olen = 0
+        else:
+            self.max_ilen = max(self.max_ilen, self.sample.xlen)
+            self.max_olen = max(self.max_olen, self.sample.ylen)

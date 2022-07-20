@@ -29,10 +29,14 @@ class CommonConfig(LiteasrDataclass):
 
 @dataclass
 class DatasetConfig(LiteasrDataclass):
+    batch_count: str = field(default="seq")
     batch_size: Optional[int] = field(default=None)
     min_batch_size: Optional[int] = field(default=None)
     max_len_in: Optional[int] = field(default=None)
     max_len_out: Optional[int] = field(default=None)
+    max_frame_in: Optional[int] = field(default=None)
+    max_frame_out: Optional[int] = field(default=None)
+    max_frame_inout: Optional[int] = field(default=None)
 
 
 @dataclass
