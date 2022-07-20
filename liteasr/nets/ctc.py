@@ -22,6 +22,9 @@ class CTC(nn.Module):
         self.ctc_lo = nn.Linear(i_dim, o_dim)
         self.dropout_rate = dropout_rate
 
+    def log_softmax(self, x):
+        return F.log_softmax(self.ctc_lo(x), dim=-1)
+
     def forward(self, xs):
         xs_hat = self.ctc_lo(F.dropout(xs, p=self.dropout_rate))
         return xs_hat

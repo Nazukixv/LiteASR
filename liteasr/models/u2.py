@@ -1,14 +1,17 @@
 """U2."""
 
 from dataclasses import dataclass
+from dataclasses import defaultdict
 from dataclasses import field
 from enum import Enum
+import math
 from typing import List, Optional, Tuple
 
 from omegaconf import II
 from omegaconf import MISSING
 import torch
 from torch import Tensor
+from torch.nn.utils.rnn import pad_sequence
 
 from liteasr.config import LiteasrDataclass
 from liteasr.models import LiteasrModel
@@ -163,6 +166,9 @@ class U2(LiteasrModel):
         return h_attn, h_ctc
 
     def inference(self, x):
+        return self.attention_rescore(x)
+
+    def attention(self, x):
         h = self.encoder(x)  # (1, time, 83) -> (1, frame, 256)
         max_len = h.size(1)
         beam_size = 10
@@ -220,6 +226,109 @@ class U2(LiteasrModel):
 
         return best_hyp.tolist()
 
+    def _ctc_prefix_beam_search(self, x):
+        h = self.encoder(x)  # (1, time, 83) -> (1, frame, 256)
+        beam_size = 10
+        ctc_probs = self.ctc.log_softmax(h).squeeze(0)  # (frame, vocab)
+
+        cur_hyps = [(tuple(), (0.0, -float('inf')))]
+
+        for logp in ctc_probs:
+            next_hyps = defaultdict(lambda: (-float('inf'), -float('inf')))
+            score_topk, index_topk = torch.topk(logp, beam_size)
+            for s in index_topk:
+                s = s.item()
+                ps = logp[s].item()
+                for prefix, (pb, pnb) in cur_hyps:
+                    last = prefix[-1] if len(prefix) > 0 else None
+                    if s == 0:  # blank
+                        n_pb, n_pnb = next_hyps[prefix]
+                        n_pb = log_add([n_pb, pb + ps, pnb + ps])
+                        next_hyps[prefix] = (n_pb, n_pnb)
+                    elif s == last:
+                        #  Update *ss -> *s;
+                        n_pb, n_pnb = next_hyps[prefix]
+                        n_pnb = log_add([n_pnb, pnb + ps])
+                        next_hyps[prefix] = (n_pb, n_pnb)
+                        # Update *s-s -> *ss, - is for blank
+                        n_prefix = prefix + (s,)
+                        n_pb, n_pnb = next_hyps[n_prefix]
+                        n_pnb = log_add([n_pnb, pb + ps])
+                        next_hyps[n_prefix] = (n_pb, n_pnb)
+                    else:
+                        n_prefix = prefix + (s,)
+                        n_pb, n_pnb = next_hyps[n_prefix]
+                        n_pnb = log_add([n_pnb, pb + ps, pnb + ps])
+                        next_hyps[n_prefix] = (n_pb, n_pnb)
+
+            next_hyps = sorted(
+                next_hyps.items(),
+                key=lambda x: log_add(list(x[1])),
+                reverse=True
+            )
+            cur_hyps = next_hyps[:beam_size]
+
+        hyps = [(y[0], log_add([y[1][0], y[1][1]])) for y in cur_hyps]
+
+        return hyps, h
+
+    def ctc_prefix_beam_search(self, x):
+        hyps, _ = self._ctc_prefix_beam_search(x)
+        return hyps[0][0]
+
+    def attention_rescore(self, x):
+        hyps, h = self._ctc_prefix_beam_search(x)
+
+        # repeat h to satisfy batch computation
+        h_in = h.repeat(len(hyps), 1, 1)  # (beam, frame, 256)
+
+        # padding hyps
+        hyps_pad = pad_sequence(
+            [
+                torch.tensor(hyp[0], device=h.device, dtype=torch.long)
+                for hyp in hyps
+            ],
+            batch_first=True,
+            padding_value=self.ignore,
+        )
+
+        # replace ignore with <eos>, add <sos> at beginning
+        _, _, hyps_in, hyps_mask = self._preprocess(
+            xs=h,
+            xlens=[h.size(1)],
+            ys=hyps_pad,
+            ylens=[len(hyp[0]) for hyp in hyps],
+        )
+
+        # construct hyps_in_mask
+        dec_mask = triangle_mask(hyps_mask.shape[1]).to(device=hyps_in.device)
+        hyps_in_mask = hyps_mask.unsqueeze(1) | dec_mask.unsqueeze(0)
+
+        # (beam, max_ylen, vocab)
+        h_attn = self.decoder(
+            hyps_in,
+            mask=hyps_in_mask,
+            memory=h_in,
+            memory_mask=None,
+        )
+        attn_score = torch.nn.functional.log_softmax(h_attn, dim=-1)
+
+        # calculate hypothesis score
+        best_score = -float('inf')
+        best_index = 0
+        for i, hyp in enumerate(hyps):
+            score = 0.0
+            for j, w in enumerate(hyp[0]):
+                score += attn_score[i][j][w]
+            score += attn_score[i][len(hyp[0])][self.eos]
+            # add ctc score
+            score += hyp[1] * 0.5  # ctc-weight
+            if score > best_score:
+                best_score = score
+                best_index = i
+
+        return hyps[best_index][0]
+
     def get_pred_len(self, xlens: List[int]) -> Tensor:
         pred_len = torch.tensor(xlens)
         pred_len = ((pred_len - 1) // 2 - 1) // 2
@@ -272,3 +381,14 @@ class U2(LiteasrModel):
         cfg.input_dim = task.feat_dim
         cfg.vocab_size = task.vocab_size
         return cls(cfg, task)
+
+
+def log_add(args: List[int]) -> float:
+    """
+    Stable log add
+    """
+    if all(a == -float('inf') for a in args):
+        return -float('inf')
+    a_max = max(args)
+    lsp = math.log(sum(math.exp(a - a_max) for a in args))
+    return a_max + lsp
