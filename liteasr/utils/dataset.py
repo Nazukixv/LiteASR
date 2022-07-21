@@ -38,7 +38,8 @@ class AudioFileDataset(Dataset):
 
             if len(self.data) % 10000 == 0:
                 logger.info("number of loaded data: {}".format(len(self.data)))
-        logger.info("number of loaded data: {}".format(len(self.data)))
+        if len(self.data) % 10000 != 0:
+            logger.info("number of loaded data: {}".format(len(self.data)))
         self.feat_dim = self.data[0].shape[-1]
 
     def batchify(
