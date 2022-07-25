@@ -161,10 +161,8 @@ class Trainer(object):
                 sync_context = nullcontext
 
             with sync_context():
-                loss = self.criterion(
-                    self.model, *batch
-                ) / self.cfg.optimization.accum_grad
-                self.loss += loss
+                loss = self.criterion(self.model, *batch)
+                self.loss += loss / self.cfg.optimization.accum_grad
                 loss.backward()
 
             if i % self.cfg.optimization.accum_grad == 0:
@@ -229,3 +227,16 @@ class Trainer(object):
         if self.is_master():
             model_name = "model.ep.{}.pt".format(self.epoch)
             self.task.save_model(model_name, self.model)
+
+    def inference(self):
+        if self.is_master():
+            self.model.eval()
+            with torch.no_grad():
+                for test_set in self.task.dataset("test"):
+                    for data in test_set:
+                        feat = data.x.unsqueeze(0).cuda()
+                        ref = data.text
+                        hyp = self.task.inference(feat, self.model)
+                        res = "[X]" if ref == hyp else "[ ]"
+                        logger.debug(f"{res} {hyp}")
+            self.model.train()
