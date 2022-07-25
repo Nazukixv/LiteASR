@@ -51,6 +51,7 @@ class _SpecAugmentConfig(object):
 @dataclass
 class PostProcessConfig(LiteasrDataclass):
     spec_aug: _SpecAugmentConfig = _SpecAugmentConfig()
+    workflow: List[str] = field(default_factory=lambda: ["spec_aug"])
 
 
 @dataclass
