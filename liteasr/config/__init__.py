@@ -16,7 +16,6 @@ class LiteasrDataclass(object):
 
 @dataclass
 class _TriggerConfig(LiteasrDataclass):
-    key: str = field(default="")
     interval: int = field(default=1)
     unit: str = field(default="epoch")
 

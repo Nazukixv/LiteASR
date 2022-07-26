@@ -115,7 +115,7 @@ class Trainer(object):
     def _add_events(self):
         trigger_store = {}
         for t in self.cfg.common.trigger:
-            trigger_store[t.key] = Trigger(t.interval, t.unit)
+            trigger_store[t.name] = Trigger(t.interval, t.unit)
 
         self.event_manager = EventManager()
         for key in trigger_store:
