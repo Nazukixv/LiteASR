@@ -75,9 +75,10 @@ class OptimizationConfig(LiteasrDataclass):
 @dataclass
 class InferenceConfig(LiteasrDataclass):
     ckpt_path: str = II("task.save_dir")
-    ckpt_name: Optional[str] = field(default=MISSING)
+    ckpt_name: Optional[int] = field(default=MISSING)
     model_avg: bool = field(default=False)
     avg_num: int = field(default=1)
+    avg_policy: Optional[str] = field(default=None)
     thread_num: int = field(default=32)
 
 
