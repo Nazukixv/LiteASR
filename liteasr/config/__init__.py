@@ -78,7 +78,7 @@ class InferenceConfig(LiteasrDataclass):
     ckpt_name: Optional[int] = field(default=MISSING)
     model_avg: bool = field(default=False)
     avg_num: int = field(default=1)
-    avg_policy: Optional[str] = field(default=None)
+    avg_policy: Optional[str] = field(default=II("run_cfg.dir") + "/train.log")
     thread_num: int = field(default=32)
 
 
