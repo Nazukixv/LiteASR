@@ -1,25 +1,26 @@
 defaults:
   - liteasr_config
-  - task: pseudo_task
-  - model: my_transducer
-  - criterion: my_rnnt
-  - optimizer: my_noam
+  - task: ???
+  - model: ???
+  - criterion: ???
+  - optimizer: ???
   - _self_
 
 common:
   seed: 42
   trigger:
-    - key: report_loss
+    - name: report_loss
       interval: 100
       unit: iteration
-    - key: valid
+    - name: valid
       interval: 1
       unit: epoch
-    - key: save_model
+    - name: save_model
       interval: 1
       unit: epoch
 
 dataset:
+  batch_count: seq
   batch_size: 32
   max_len_in: 800
   max_len_out: 150
@@ -38,14 +39,15 @@ distributed:
   init_method: tcp://localhost:23333
 
 optimization:
-  max_epoch: 30
+  max_epoch: 100
   max_iter: -1
   accum_grad: 2
   clip_grad_norm: 5.0
 
 inference:
-  model_avg: False
-  avg_num: 5
+  ckpt_name: 100
+  model_avg: true
+  avg_num: 10
 
 hydra:
   job_logging:
