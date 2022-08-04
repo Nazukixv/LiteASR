@@ -64,13 +64,12 @@ class AudioSheet(object):
 class TextSheet(object):
 
     def __init__(self, data_cfg, vocab: Vocab):
-        self.text = f"{data_cfg}/text.split"
+        self.text = f"{data_cfg}/text"
         self.vocab = vocab
 
     def __iter__(self):
         with open(self.text, 'r') as ftxt:
             for line in ftxt.readlines():
                 entry = line.strip().split()
-                uttid, *tokens = entry
-                text = "".join(tokens)  # naive impl
-                yield uttid, self.vocab.lookup(tokens), text
+                uttid, text = entry
+                yield uttid, self.vocab.lookup(text), text
