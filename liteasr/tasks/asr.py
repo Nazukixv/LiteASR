@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from dataclasses import field
 import logging
 import os
+from pathlib import Path
 from typing import List, Optional
 
 from omegaconf import MISSING
@@ -40,6 +41,7 @@ class ASRTask(LiteasrTask):
         super().__init__(cfg)
         self.vocab = Vocab(cfg.vocab)
         self.save_dir = cfg.save_dir
+        Path(self.save_dir).mkdir(parents=True, exist_ok=True)
 
         self.vocab_size = len(self.vocab)
         self.feat_dim = 0
