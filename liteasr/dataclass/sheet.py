@@ -71,5 +71,6 @@ class TextSheet(object):
         with open(self.text, 'r') as ftxt:
             for line in ftxt.readlines():
                 entry = line.strip().split()
-                uttid, text = entry
+                uttid, *tokens = entry
+                text = "".join(tokens)  # naive impl
                 yield uttid, self.vocab.lookup(text), text
