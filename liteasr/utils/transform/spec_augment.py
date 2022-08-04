@@ -17,7 +17,7 @@ class SpecAugment(object):
     def __init__(self, cfg: _SpecAugmentConfig):
         self.cfg = cfg
 
-    def time_warp(self, x, inplace=False, mode="PIL"):
+    def time_warp(self, x):
         """time warp for spec augment
 
         move random center frame by the random width ~ uniform(-window, window)
@@ -46,13 +46,13 @@ class SpecAugment(object):
             (x.shape[1], t - warped),
             BICUBIC,
         )
-        if inplace:
+        if self.cfg.inplace:
             x[:warped] = left
             x[warped:] = right
             return x
         return numpy.concatenate((left, right), 0)
 
-    def freq_mask(self, x, replace_with_zero=True, inplace=False):
+    def freq_mask(self, x):
         """freq mask for spec agument
 
         :param numpy.ndarray x: (time, freq)
@@ -60,7 +60,7 @@ class SpecAugment(object):
         :param bool replace_with_zero: pad zero on mask if true else use mean
         """
 
-        if inplace:
+        if self.cfg.inplace:
             cloned = x
         else:
             cloned = x.copy()
@@ -78,20 +78,20 @@ class SpecAugment(object):
             if f_zero == f_zero + f:
                 continue
 
-            if replace_with_zero:
+            if self.cfg.replace_with_zero:
                 cloned[:, f_zero:mask_end] = 0
             else:
                 cloned[:, f_zero:mask_end] = cloned.mean()
         return cloned
 
-    def time_mask(self, x, replace_with_zero=True, inplace=False):
+    def time_mask(self, x):
         """freq mask for spec agument
 
         :param numpy.ndarray x: (time, freq)
         :param bool inplace: overwrite
         :param bool replace_with_zero: pad zero on mask if true else use mean
         """
-        if inplace:
+        if self.cfg.inplace:
             cloned = x
         else:
             cloned = x.copy()
@@ -110,7 +110,7 @@ class SpecAugment(object):
                 continue
 
             mask_end += t_zero
-            if replace_with_zero:
+            if self.cfg.replace_with_zero:
                 cloned[t_zero:mask_end] = 0
             else:
                 cloned[t_zero:mask_end] = cloned.mean()

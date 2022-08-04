@@ -45,6 +45,8 @@ class _SpecAugmentConfig(object):
     freq_mask_times: int = field(default=1)
     time_mask: int = field(default=100)
     time_mask_times: int = field(default=1)
+    inplace: bool = field(default=True)
+    replace_with_zero: bool = field(default=False)
 
 
 @dataclass
