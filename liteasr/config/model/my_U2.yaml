@@ -1,0 +1,33 @@
+defaults:
+  - U2
+
+name: U2
+
+dropout_rate: 0.1
+
+# encoder
+enc_arch: Conformer
+use_rel: true
+input_dim: ???
+enc_dim: 256
+enc_ff_dim: 2048
+enc_attn_heads: 4
+enc_dropout_rate: ${model.dropout_rate}
+enc_pos_dropout_rate: ${model.enc_dropout_rate}
+enc_attn_dropout_rate: 0.0
+enc_ff_dropout_rate: ${model.enc_dropout_rate}
+enc_layers: 12
+activation: swish
+
+# decoder
+dec_arch: Transformer
+vocab_size: ???
+dec_dim: 256
+dec_ff_dim: 2048
+dec_attn_heads: 4
+dec_dropout_rate: ${model.dropout_rate}
+dec_pos_dropout_rate: ${model.dec_dropout_rate}
+dec_self_attn_dropout_rate: 0.0
+dec_src_attn_dropout_rate: 0.0
+dec_ff_dropout_rate: ${model.dec_dropout_rate}
+dec_layers: 6

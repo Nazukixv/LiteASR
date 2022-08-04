@@ -1,0 +1,9 @@
+defaults:
+  - hybrid_ctc
+
+name: hybrid_ctc
+vocab_size: ???
+padding_idx: -1
+smoothing: 0.1
+normalize_length: false
+ctc_weight: 0.3
