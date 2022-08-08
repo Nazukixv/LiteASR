@@ -5,7 +5,6 @@ import os
 from pathlib import Path
 from typing import List, Optional
 
-from omegaconf import II
 from omegaconf import MISSING
 from omegaconf.listconfig import ListConfig
 
@@ -32,7 +31,7 @@ class ASRConfig(LiteasrDataclass):
     train: str = field(default=MISSING)
     valid: str = field(default=MISSING)
     test: List[str] = field(default_factory=list)
-    save_dir: str = field(default=II("run_cfg.dir") + "/ckpts")
+    save_dir: str = field(default="ckpts")
 
 
 @register_task('asr', dataclass=ASRConfig)
