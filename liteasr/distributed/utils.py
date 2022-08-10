@@ -67,7 +67,13 @@ def distributed_func(rank, func, cfg: LiteasrConfig):
     cfg.distributed.device_id = rank
     torch.cuda.set_device(cfg.distributed.device_id)
 
-    cfg.distributed.rank = rank
+    if cfg.distributed.rank == -1:
+        cfg.distributed.rank = (
+            rank
+            + cfg.distributed.machine_rank * cfg.distributed.world_piece_size
+        )
+    else:
+        cfg.distributed.rank += rank
 
     distributed_init(cfg)
 
@@ -89,11 +95,11 @@ def call_func(func, cfg: LiteasrConfig):
         logger.info("using only one single GPU, not apply DDP training")
         func(cfg)
     else:
-        check_distributed_config(cfg.distributed)
+        # check_distributed_config(cfg.distributed)
         infer_init_method(cfg.distributed)
         mp.spawn(
             fn=distributed_func,
             args=(func, cfg),
-            nprocs=cfg.distributed.world_size,
+            nprocs=cfg.distributed.world_piece_size,
             join=True,
         )

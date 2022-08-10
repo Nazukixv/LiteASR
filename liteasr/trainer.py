@@ -87,7 +87,7 @@ class Trainer(object):
                 ddp_model = DistributedDataParallel(
                     module=self._model,
                     device_ids=[self.cfg.distributed.device_id],
-                    output_device=self.cfg.distributed.rank,
+                    output_device=self.cfg.distributed.device_id,
                 )
                 self._wrapped_model = DDPModelWrapper(ddp_model)
             else:
