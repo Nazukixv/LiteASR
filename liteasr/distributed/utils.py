@@ -67,13 +67,9 @@ def distributed_func(rank, func, cfg: LiteasrConfig):
     cfg.distributed.device_id = rank
     torch.cuda.set_device(cfg.distributed.device_id)
 
-    if cfg.distributed.rank == -1:
-        cfg.distributed.rank = (
-            rank
-            + cfg.distributed.machine_rank * cfg.distributed.world_piece_size
-        )
-    else:
-        cfg.distributed.rank += rank
+    cfg.distributed.rank = sum(
+        cfg.distributed.world_piece_size[:cfg.distributed.machine_rank]
+    ) + rank
 
     distributed_init(cfg)
 
@@ -100,6 +96,8 @@ def call_func(func, cfg: LiteasrConfig):
         mp.spawn(
             fn=distributed_func,
             args=(func, cfg),
-            nprocs=cfg.distributed.world_piece_size,
+            nprocs=(
+                cfg.distributed.world_piece_size[cfg.distributed.machine_rank]
+            ),
             join=True,
         )

@@ -58,9 +58,11 @@ class PostProcessConfig(LiteasrDataclass):
 @dataclass
 class DistributedConfig(LiteasrDataclass):
     world_size: int = field(default=max(1, torch.cuda.device_count()))
-    world_piece_size: int = II("distributed.world_size")
+    world_piece_size: List[int] = field(
+        default_factory=lambda: [II("distributed.world_size")]
+    )
     machine_rank: int = field(default=0)
-    rank: int = field(default=-1)
+    rank: int = field(default=0)
     backend: str = field(default="NCCL")
     init_method: Optional[str] = field(default=None)
     device_id: int = field(default=0)
