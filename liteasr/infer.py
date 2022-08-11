@@ -22,13 +22,16 @@ from liteasr.utils.score import levenshtein
 logger = logging.getLogger("liteasr.infer")
 
 
-@hydra.main(config_path="config", config_name="config")
+@hydra.main(config_path=None, config_name="config")
 def main(cfg: LiteasrConfig) -> None:
     # make hydra logging work with ddp
     # (see https://github.com/facebookresearch/hydra/issues/1126)
     with open_dict(cfg):
         cfg.job_logging_cfg = OmegaConf.to_container(
             HydraConfig.get().job_logging, resolve=True
+        )
+        cfg.run_cfg = OmegaConf.to_container(
+            HydraConfig.get().run, resolve=True
         )
     cfg = OmegaConf.create(
         OmegaConf.to_container(cfg, resolve=True, enum_to_str=True)
