@@ -4,6 +4,7 @@ from typing import Optional
 
 from torch import Tensor
 import torch.nn as nn
+import torch.nn.functional as F
 
 from liteasr.nets.attention import MultiHeadAttention
 from liteasr.nets.attention import RelativeMultiHeadAttention
@@ -123,4 +124,70 @@ class TransformerEncoder(nn.Module):
         if isinstance(x, tuple):
             x = x[0]
         x = self.after_norm(x)
+        return x
+
+
+class Wav2Vec2TansformerEncoder(nn.Module):
+
+    def __init__(
+        self,
+        i_dim: int,
+        h_dim: int,
+        ff_dim: int,
+        n_head: int,
+        n_layer: int,
+        dropout_rate: float,
+        attn_dropout_rate: float,
+        ff_dropout_rate: float,
+    ) -> None:
+        super().__init__()
+        self.dropout_rate = dropout_rate
+        self.embed = nn.Conv1d(
+            in_channels=i_dim,  # cfg.encoder_embed_dim
+            out_channels=i_dim,  # cfg.encoder_embed_dim
+            kernel_size=128,  # cfg.conv_pos
+            padding=128 // 2,  # cfg.conv_pos // 2
+            groups=16,  # cfg.conv_pos_groups
+        )
+        self.gelu = nn.GELU()
+        self.embed_norm = LayerNorm(i_dim)
+
+        # assert arch == "transformer", f"{arch}"
+        self.enc_layers = nn.ModuleList(
+            [
+                TransformerEncoderLayer(
+                    size=i_dim,
+                    self_attn=MultiHeadAttention(
+                        n_head,
+                        h_dim,
+                        attn_dropout_rate,
+                    ),
+                    feed_forward=PositionwiseFeedForward(
+                        h_dim,
+                        ff_dim,
+                        dropout_rate=ff_dropout_rate,
+                    ),
+                    dropout_rate=dropout_rate,
+                ) for _ in range(n_layer)
+            ]
+        )
+
+    def extract_features(self, x, mask: Optional[Tensor] = None):
+        residual = x
+        x = self.embed(x.transpose(1, 2))
+        x = x[:, :, :-1]
+        x = residual + self.gelu(x).transpose(1, 2)
+        x = self.embed_norm(x)
+        x = F.dropout(x, p=self.dropout_rate, training=self.training)
+
+        return x
+
+    def forward(self, x, mask: Optional[Tensor] = None):
+        x = self.extract_features(x, mask)
+
+        x = x.transpose(0, 1)  # B x T x C -> T x B x C
+        for n, layer in enumerate(self.enc_layers):
+            x = layer(x, mask=mask)
+        x = x.transpose(0, 1)  # T x B x C -> B x T x C
+
         return x
