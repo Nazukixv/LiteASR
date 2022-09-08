@@ -1,5 +1,7 @@
 import os
 
+import soundfile as sf
+
 from liteasr.dataclass.vocab import Vocab
 
 
@@ -58,7 +60,14 @@ class AudioSheet(object):
                     shape = [int(end * 16000) - int(start * 16000) - 1]
                     yield uttid, fds[wavid], start, end, shape
         else:
-            raise NotImplementedError
+            with open(self.scp, "r") as fscp:
+                for line in fscp.readlines():
+                    entry = line.strip().split(None, 1)
+                    if len(entry) != 2:
+                        raise ValueError(f"Invalid line is found:\n>   {line}")
+                    wavid, wavfd = entry
+                    samples, rate = sf.read(wavfd)
+                    yield wavid, wavfd, 0, len(samples) / rate, [len(samples)]
 
 
 class TextSheet(object):
