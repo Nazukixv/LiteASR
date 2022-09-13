@@ -42,12 +42,16 @@ class Trainer(object):
         self.optimizer = optimizer
         self.iter = 0
 
-        train_set = self.task.dataset("train")
-        train_set.batchify(self.cfg.dataset)
-        train_set.set_postprocess(self.cfg.postprocess)
-
-        valid_set = self.task.dataset("valid")
-        valid_set.batchify(self.cfg.dataset)
+        train_set = self.task.dataset("train").batchify(
+            "train",
+            self.cfg.dataset,
+            self.cfg.postprocess,
+        )
+        valid_set = self.task.dataset("valid").batchify(
+            "valid",
+            self.cfg.dataset,
+            self.cfg.postprocess,
+        )
 
         if self.cfg.distributed.world_size > 1:
             train_sampler = DistributedSampler(train_set)
@@ -61,14 +65,14 @@ class Trainer(object):
             batch_size=1,
             shuffle=(train_sampler is None),
             sampler=train_sampler,
-            collate_fn=train_set.collater,
+            collate_fn=lambda x: x[0],
         )
         self.valid_iter = DataLoader(
             dataset=valid_set,
             batch_size=1,
             shuffle=(valid_sampler is None),
             sampler=valid_sampler,
-            collate_fn=valid_set.collater,
+            collate_fn=lambda x: x[0],
         )
 
         self.device = torch.device("cuda")
