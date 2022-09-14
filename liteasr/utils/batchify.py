@@ -7,7 +7,7 @@ from liteasr.config import DatasetConfig
 logger = logging.getLogger(__name__)
 
 
-class BatchfiedDataset(object):
+class BatchifyPolicy(object):
 
     def __init__(self, dataset_cfg: DatasetConfig):
         super().__init__()
@@ -64,7 +64,7 @@ class BatchfiedDataset(object):
         return len(self.data)
 
 
-class SeqDataset(BatchfiedDataset):
+class SeqBatch(BatchifyPolicy):
     factor: int
     dynamic_batch_size: int
     max_ilen: int
@@ -103,7 +103,7 @@ class SeqDataset(BatchfiedDataset):
             )
 
 
-class FrameDataset(BatchfiedDataset):
+class FrameBatch(BatchifyPolicy):
     max_ilen: int
     max_olen: int
 
