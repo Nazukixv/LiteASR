@@ -2,30 +2,18 @@
 
 import logging
 
-from torch.nn.utils.rnn import pad_sequence
-from torch.utils.data import Dataset
-
 from liteasr.config import DatasetConfig
-from liteasr.config import PostProcessConfig
-from liteasr.utils.transform import PostProcess
 
 logger = logging.getLogger(__name__)
 
 
-class BatchfiedDataset(Dataset):
+class BatchfiedDataset(object):
 
-    def __init__(
-        self,
-        samples,
-        split: str,
-        dataset_cfg: DatasetConfig,
-        postprocess_cfg: PostProcessConfig,
-    ):
+    def __init__(self, dataset_cfg: DatasetConfig):
+        super().__init__()
         self.data = []
         self.minibatch = []
-        self.split = split
         self.dataset_cfg = dataset_cfg
-        self.postprocess = PostProcess(postprocess_cfg)
 
     @property
     def empty(self) -> bool:
@@ -39,7 +27,7 @@ class BatchfiedDataset(Dataset):
 
         raise NotImplementedError
 
-    def push(self, sample):
+    def push(self, idx):
         """Push one sample into minibatch."""
 
         raise NotImplementedError
@@ -55,71 +43,59 @@ class BatchfiedDataset(Dataset):
 
         raise NotImplementedError
 
-    def batchify(self, samples):
+    def batchify(self, indices, samples):
+        assert len(indices) == len(samples), f"{len(samples)}"
         self.refresh()
-        for sample in samples:
-            self.sample = sample
+        for idx in indices:
+            self.sample = samples[idx]
             if self.full:
                 self.pop()
                 self.refresh()
-            self.push(sample)
+            self.push(idx)
 
         if not self.empty:
             self.pop()
             self.refresh()
 
     def __getitem__(self, index):
-        audios = self.data[index]
-        xs, xlens, ys, ylens = [], [], [], []
-        not_train = self.split != "train"
-        for audio in audios:
-            xs.append(audio.x if not_train else self.postprocess(audio.x))
-            xlens.append(audio.xlen)
-            ys.append(audio.y)
-            ylens.append(audio.ylen)
-        padded_xs = pad_sequence(xs, batch_first=True, padding_value=0)
-        padded_ys = pad_sequence(ys, batch_first=True, padding_value=-1)
-        return padded_xs, xlens, padded_ys, ylens
+        return self.data[index]
 
     def __len__(self):
         return len(self.data)
 
 
 class SeqDataset(BatchfiedDataset):
+    factor: int
+    dynamic_batch_size: int
+    max_ilen: int
+    max_olen: int
 
-    def __init__(
-        self,
-        samples,
-        split: str,
-        dataset_cfg: DatasetConfig,
-        postprocess_cfg: PostProcessConfig,
-    ):
-        super().__init__(samples, split, dataset_cfg, postprocess_cfg)
-
-        samples = sorted(samples, key=lambda a: a.xlen, reverse=True)
-        self.batchify(samples)
+    def __init__(self, dataset_cfg: DatasetConfig):
+        super().__init__(dataset_cfg)
 
     @property
     def full(self):
         return len(self.minibatch) == self.dynamic_batch_size
 
-    def push(self, sample):
+    def push(self, idx):
         if self.empty:
-            self.minibatch.append(sample)
+            self.minibatch.append(idx)
             self.refresh()
         else:
-            self.minibatch.append(sample)
+            self.minibatch.append(idx)
 
     def refresh(self):
         if self.empty:
             self.factor = 0
             self.dynamic_batch_size = self.dataset_cfg.batch_size
+            self.max_ilen = 0
+            self.max_olen = 0
         else:
-            ilen = self.minibatch[0].xlen
-            olen = self.minibatch[0].ylen
+            self.max_ilen = self.sample.xlen
+            self.max_olen = self.sample.ylen
             self.factor = max(
-                int(ilen / self.dataset_cfg.max_len_in),
-                int(olen / self.dataset_cfg.max_len_out),
+                int(self.max_ilen / self.dataset_cfg.max_len_in),
+                int(self.max_olen / self.dataset_cfg.max_len_out),
             )
             self.dynamic_batch_size = max(
                 self.dataset_cfg.min_batch_size,
@@ -128,18 +104,11 @@ class SeqDataset(BatchfiedDataset):
 
 
 class FrameDataset(BatchfiedDataset):
+    max_ilen: int
+    max_olen: int
 
-    def __init__(
-        self,
-        samples,
-        split: str,
-        dataset_cfg: DatasetConfig,
-        postprocess_cfg: PostProcessConfig,
-    ):
-        super().__init__(samples, split, dataset_cfg, postprocess_cfg)
-
-        samples = sorted(samples, key=lambda a: a.xlen, reverse=True)
-        self.batchify(samples)
+    def __init__(self, dataset_cfg: DatasetConfig):
+        super().__init__(dataset_cfg)
 
     @property
     def full(self):
@@ -148,21 +117,28 @@ class FrameDataset(BatchfiedDataset):
         exp_size = len(self.minibatch) + 1
 
         # in full
-        if max_ilen * exp_size > self.dataset_cfg.max_frame_in:
+        if (
+            self.dataset_cfg.max_frame_in
+            and max_ilen * exp_size > self.dataset_cfg.max_frame_in
+        ):
             return True
         # out full
-        elif max_olen * exp_size > self.dataset_cfg.max_frame_out:
+        elif (
+            self.dataset_cfg.max_frame_out
+            and max_olen * exp_size > self.dataset_cfg.max_frame_out
+        ):
             return True
         # inout full
         elif (
-            max_ilen + max_olen
-        ) * exp_size > self.dataset_cfg.max_frame_inout:
+            self.dataset_cfg.max_frame_inout and
+            (max_ilen + max_olen) * exp_size > self.dataset_cfg.max_frame_inout
+        ):
             return True
         else:
             return False
 
-    def push(self, sample):
-        self.minibatch.append(sample)
+    def push(self, idx):
+        self.minibatch.append(idx)
         self.refresh()
 
     def refresh(self):

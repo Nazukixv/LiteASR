@@ -56,6 +56,7 @@ class ASRTask(LiteasrTask):
         if isinstance(data_cfg, str):
             logger.info("loading {} data from {}".format(split, data_cfg))
             self.datasets[split] = AudioFileDataset(
+                split=split,
                 data_cfg=data_cfg,
                 vocab=self.vocab,
                 keep_raw=split == "test",
@@ -67,6 +68,7 @@ class ASRTask(LiteasrTask):
                 logger.info("loading {} data from {}".format(split, cfg))
                 self.datasets[split].append(
                     AudioFileDataset(
+                        split=split,
                         data_cfg=cfg,
                         vocab=self.vocab,
                         keep_raw=split == "test",
