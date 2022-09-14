@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from dataclasses import field
+from typing import Optional
 
 import torch
 
@@ -10,6 +11,7 @@ from liteasr.optims import register_optimzer
 
 @dataclass
 class AdamConfig(LiteasrDataclass):
+    name: Optional[str] = field(default="adam")
     lr: float = field(default=1e-3)
     beta1: float = field(default=0.9)
     beta2: float = field(default=0.999)

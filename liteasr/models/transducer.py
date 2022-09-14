@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from dataclasses import field
 from enum import Enum
-from typing import List
+from typing import List, Optional
 
 from omegaconf import II
 from omegaconf import MISSING
@@ -50,6 +50,8 @@ class DecoderArch(Enum):
 
 @dataclass
 class TransducerConfig(LiteasrDataclass):
+    name: Optional[str] = field(default="transducer")
+
     # transducer
     joint_dim: int = field(default=768)
     dropout_rate: float = field(default=0.0)

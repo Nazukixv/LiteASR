@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from dataclasses import field
+from typing import Optional
 
 from liteasr.optims import register_optimzer
 from liteasr.optims.adam import Adam
@@ -8,6 +9,7 @@ from liteasr.optims.adam import AdamConfig
 
 @dataclass
 class NoamConfig(AdamConfig):
+    name: Optional[str] = field(default="noam")
     beta2: float = field(default=0.98)
     eps: float = field(default=1e-9)
     model_dim: int = field(default=256)

@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from dataclasses import field
+from typing import Optional
 
 import torch
 from torch import cuda
@@ -14,6 +15,7 @@ from liteasr.models import LiteasrModel
 
 @dataclass
 class RNNTLossConfig(LiteasrDataclass):
+    name: Optional[str] = field(default="rnnt")
     trans_type: str = field(default="warp-transducer")
     blank_id: int = field(default=0)
 

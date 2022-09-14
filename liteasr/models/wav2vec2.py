@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from dataclasses import field
-from typing import Tuple
+from typing import Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -28,6 +28,7 @@ def buffered_arange(max):
 
 @dataclass
 class Wav2Vec2Config(LiteasrDataclass):
+    name: Optional[str] = field(default="wav2vec2")
     # extractor_mode: EXTRACTOR_MODE_CHOICES = field(
     #     default="default",
     #     metadata={

@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from dataclasses import field
+from typing import Optional
 
 import torch.nn as nn
 
@@ -13,6 +14,7 @@ from liteasr.models import LiteasrModel
 
 @dataclass
 class Wav2Vec2LossConfig(LiteasrDataclass):
+    name: Optional[str] = field(default="wav2vec")
     infonce: bool = field(default=False)
 
 

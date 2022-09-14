@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from dataclasses import field
+from typing import Optional
 
 from omegaconf import MISSING
 import torch
@@ -15,6 +16,7 @@ from liteasr.models import LiteasrModel
 
 @dataclass
 class HybridCTCLossConfig(LiteasrDataclass):
+    name: Optional[str] = field(default="hybrid_ctc")
     vocab_size: int = field(default=MISSING)
     padding_idx: int = field(default=-1)
     smoothing: float = field(default=0.0)
