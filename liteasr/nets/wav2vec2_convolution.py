@@ -3,7 +3,7 @@ from typing import List, Tuple
 from torch import Tensor
 import torch.nn as nn
 
-from liteasr.nets.layer_norm import LayerNorm
+from liteasr.nets.layer_norm import Fp32LayerNorm
 
 
 class ConvolutionBlock(nn.Module):
@@ -20,13 +20,15 @@ class ConvolutionBlock(nn.Module):
         super().__init__()
         self.conv = nn.Conv1d(n_in, n_out, kernel, stride, bias=conv_bias)
         self.dropout = nn.Dropout(p=dropout_rate)
-        self.layer_norm = LayerNorm(n_out, dim=-2)
+        self.layer_norm = Fp32LayerNorm(n_out, elementwise_affine=True)
         self.gelu = nn.GELU()
         nn.init.kaiming_normal_(self.conv.weight)
 
     def forward(self, x):
         x = self.dropout(self.conv(x))
+        x = x.transpose(-2, -1)
         x = self.layer_norm(x)
+        x = x.transpose(-2, -1)
         x = self.gelu(x)
         return x
 
