@@ -201,7 +201,7 @@ class Wav2Vec2Config(LiteasrDataclass):
 
     # negative selection
     num_negatives: int = field(
-        default=7,
+        default=100,
         metadata={"help": "number of negative examples from the same sample"},
     )
     negatives_from_everywhere: bool = field(
