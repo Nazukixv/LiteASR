@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import List, Optional, Union
 
+import soundfile as sf
 import torch
 
 from liteasr.utils.kaldiio import load_mat
@@ -21,8 +22,10 @@ class Audio(object):
         if self.start == -1 or self.end == -1:  # feature map
             x = torch.from_numpy(load_mat(self.fd))
         else:  # pcm samples
-            # TODO: pcm -> tensor
-            pass
+            samples, rate = sf.read(self.fd)
+            x = torch.from_numpy(samples).float()
+            stt = round(self.start * rate)
+            x = x[stt:stt + self.shape[0]]
         return x
 
     @property
@@ -36,4 +39,5 @@ class Audio(object):
 
     @property
     def ylen(self):
-        return len(self.tokenids)
+        ylen = len(self.tokenids) if self.tokenids is not None else 0
+        return ylen
