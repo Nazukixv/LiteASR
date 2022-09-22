@@ -18,6 +18,7 @@ setup(
     # dependency
     install_requires=[
         "hydra-core==1.1.0",
+        "soundfile>=0.10.2",
     ],
 
     # target python versions
