@@ -3,11 +3,13 @@
 import logging
 
 from liteasr.config import DatasetConfig
+from liteasr.dataclass.audio_data import Audio
 
 logger = logging.getLogger(__name__)
 
 
 class BatchifyPolicy(object):
+    sample: Audio
 
     def __init__(self, dataset_cfg: DatasetConfig):
         super().__init__()
@@ -148,3 +150,26 @@ class FrameBatch(BatchifyPolicy):
         else:
             self.max_ilen = max(self.max_ilen, self.sample.xlen)
             self.max_olen = max(self.max_olen, self.sample.ylen)
+
+
+class Wav2VecBatch(BatchifyPolicy):
+    min_frame: int
+    max_batch_frame: int = 1400000  # should be configurable
+
+    def __init__(self, dataset_cfg: DatasetConfig):
+        super().__init__(dataset_cfg)
+
+    @property
+    def full(self) -> bool:
+        min_frame = min(self.min_frame, self.sample.xlen)
+        return (len(self.minibatch) + 1) * min_frame > self.max_batch_frame
+
+    def push(self, idx: int):
+        self.minibatch.append(idx)
+        self.refresh()
+
+    def refresh(self):
+        if self.empty:
+            self.min_frame = 250000  # should be configurable
+        else:
+            self.min_frame = min(self.min_frame, self.sample.xlen)
