@@ -13,7 +13,6 @@ import torch
 from liteasr import tasks
 from liteasr.config import LiteasrConfig
 from liteasr.distributed import utils as dist_util
-
 from liteasr.trainer import Trainer
 
 logger = logging.getLogger("liteasr.train")
