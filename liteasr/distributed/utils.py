@@ -12,6 +12,11 @@ from liteasr.config import LiteasrConfig
 logger = logging.getLogger(__name__)
 
 
+def barrier():
+    if dist.is_initialized():
+        dist.barrier()
+
+
 def check_distributed_config(cfg: DistributedConfig):
     device_count = torch.cuda.device_count()
     if cfg.world_size > device_count:
