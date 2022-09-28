@@ -24,7 +24,7 @@ class AudioFileDataset(Dataset):
     def __init__(
         self,
         split: str,
-        data_cfg: str,
+        data_dir: str,
         vocab,
         keep_raw=False,
     ):
@@ -32,8 +32,8 @@ class AudioFileDataset(Dataset):
         self.data = []
         self.batchify_policy = None
 
-        _as = AudioSheet(data_cfg)
-        _ts = TextSheet(data_cfg, vocab=vocab)
+        _as = AudioSheet(data_dir)
+        _ts = TextSheet(data_dir, vocab=vocab)
         for audio_info, text_info in zip(_as, _ts):
             uttid, fd, start, end, shape = audio_info
             uttid_t, tokenids, text = text_info

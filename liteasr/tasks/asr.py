@@ -3,7 +3,7 @@ from dataclasses import field
 import logging
 import os
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from omegaconf import MISSING
 from omegaconf.listconfig import ListConfig
@@ -49,27 +49,27 @@ class ASRTask(LiteasrTask):
     def load_dataset(
         self,
         split: str,
-        data_cfg,
+        data_dir: Union[str, ListConfig],
     ):
         assert split in ["train", "valid", "test"]
 
-        if isinstance(data_cfg, str):
-            logger.info("loading {} data from {}".format(split, data_cfg))
+        if isinstance(data_dir, str):
+            logger.info("loading {} data from {}".format(split, data_dir))
             self.datasets[split] = AudioFileDataset(
                 split=split,
-                data_cfg=data_cfg,
+                data_dir=data_dir,
                 vocab=self.vocab,
                 keep_raw=split == "test",
             )
             self.feat_dim = self.datasets[split].feat_dim
-        elif isinstance(data_cfg, ListConfig):
+        elif isinstance(data_dir, ListConfig):
             self.datasets[split] = []
-            for cfg in data_cfg:
-                logger.info("loading {} data from {}".format(split, cfg))
+            for d_dir in data_dir:
+                logger.info("loading {} data from {}".format(split, d_dir))
                 self.datasets[split].append(
                     AudioFileDataset(
                         split=split,
-                        data_cfg=cfg,
+                        data_dir=d_dir,
                         vocab=self.vocab,
                         keep_raw=split == "test",
                     )
@@ -77,7 +77,7 @@ class ASRTask(LiteasrTask):
             self.feat_dim = self.datasets[split][0].feat_dim
         else:
             raise TypeError(
-                "data_cfg with type {} cannot be parsed".format(type(data_cfg))
+                "data_dir with type {} cannot be parsed".format(type(data_dir))
             )
 
     def inference(self, x, model: LiteasrModel):

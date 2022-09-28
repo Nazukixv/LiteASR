@@ -2,8 +2,10 @@
 
 import importlib
 import os
+from typing import Union
 
 from hydra.core.config_store import ConfigStore
+from omegaconf.listconfig import ListConfig
 
 from liteasr import criterions
 from liteasr import models
@@ -25,7 +27,7 @@ class LiteasrTask(object):
         self.cfg = cfg
         self.datasets = dict()
 
-    def load_dataset(self, split: str, data_cfg, dataset_cfg):
+    def load_dataset(self, split: str, data_dir: Union[str, ListConfig]):
         raise NotImplementedError
 
     def dataset(self, split: str):
