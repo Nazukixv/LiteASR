@@ -10,10 +10,10 @@ from omegaconf.listconfig import ListConfig
 
 from liteasr.config import LiteasrDataclass
 from liteasr.dataclass.vocab import Vocab
+from liteasr.dataset import AudioFileDataset
 from liteasr.models import LiteasrModel
 from liteasr.tasks import LiteasrTask
 from liteasr.tasks import register_task
-from liteasr.utils.dataset import AudioFileDataset
 
 logger = logging.getLogger(__name__)
 

@@ -7,10 +7,10 @@ from pathlib import Path
 from omegaconf import MISSING
 
 from liteasr.config import LiteasrDataclass
+from liteasr.dataset import RawAudioFileDataset
 from liteasr.models import LiteasrModel
 from liteasr.tasks import LiteasrTask
 from liteasr.tasks import register_task
-from liteasr.utils.dataset import RawAudioFileDataset
 
 logger = logging.getLogger(__name__)
 
