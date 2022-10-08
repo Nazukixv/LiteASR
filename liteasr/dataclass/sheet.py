@@ -26,9 +26,10 @@ class AudioSheet(object):
     def __iter__(self):
         if self.scp.endswith("feats.scp"):
             with open(self.scp, "r") as fscp, open(self.shape, "r") as fshp:
-                for scp_line, shp_line in zip(
-                    fscp.readlines(), fshp.readlines()
-                ):
+                while True:
+                    scp_line, shp_line = fscp.readline(), fshp.readline()
+                    if not scp_line or not shp_line:
+                        break
                     scp_entry = scp_line.strip().split(None, 1)
                     shp_entry = shp_line.strip().split(None, 1)
                     if len(scp_entry) != 2 or len(shp_entry) != 2:
@@ -44,14 +45,20 @@ class AudioSheet(object):
         elif self.segments is not None:
             with open(self.segments, 'r') as fseg, open(self.scp, 'r') as fscp:
                 fds = {}
-                for line in fscp.readlines():
+                while True:
+                    line = fscp.readline()
+                    if not line:
+                        break
                     entry = line.strip().split(None, 1)
                     if len(entry) != 2:
                         raise ValueError(f"Invalid line is found:\n>   {line}")
                     wavid, wavfd = entry
                     fds[wavid] = wavfd
 
-                for line in fseg.readlines():
+                while True:
+                    line = fseg.readline()
+                    if not line:
+                        break
                     entry = line.strip().split()
                     if len(entry) != 4:
                         raise ValueError(f"Invalid line is found:\n>   {line}")
@@ -61,7 +68,10 @@ class AudioSheet(object):
                     yield uttid, fds[wavid], start, end, shape
         else:
             with open(self.scp, "r") as fscp:
-                for line in fscp.readlines():
+                while True:
+                    line = fscp.readline()
+                    if not line:
+                        break
                     entry = line.strip().split(None, 1)
                     if len(entry) != 2:
                         raise ValueError(f"Invalid line is found:\n>   {line}")
@@ -78,7 +88,10 @@ class TextSheet(object):
 
     def __iter__(self):
         with open(self.text, 'r') as ftxt:
-            for line in ftxt.readlines():
+            while True:
+                line = ftxt.readline()
+                if not line:
+                    break
                 entry = line.strip().split()
                 uttid, *tokens = entry
                 text = "".join(tokens)  # naive impl
