@@ -84,4 +84,4 @@ class Vocab(object):
             return map(lambda t: self.convert(t), seq)
 
     def lookup(self, seq: Iterable[Any], convert=False):
-        return list(self.lookupi(seq, convert=convert))
+        return tuple(self.lookupi(seq, convert=convert))
