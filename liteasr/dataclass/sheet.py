@@ -41,7 +41,7 @@ class AudioSheet(object):
                     wavid, wavfd = scp_entry
                     wavid_, frames = shp_entry
                     assert wavid == wavid_
-                    yield wavid, wavfd, -1, -1, [int(frames), 83]
+                    yield wavid, wavfd, None, int(frames)
         elif self.segments is not None:
             with open(self.segments, 'r') as fseg, open(self.scp, 'r') as fscp:
                 fds = {}
@@ -63,9 +63,10 @@ class AudioSheet(object):
                     if len(entry) != 4:
                         raise ValueError(f"Invalid line is found:\n>   {line}")
                     uttid, wavid, start, end = entry
-                    start, end = float(start), float(end)
-                    shape = [int(end * 16000) - int(start * 16000) - 1]
-                    yield uttid, fds[wavid], start, end, shape
+                    start = round(float(start) * 16000)
+                    end = round(float(end) * 16000)
+                    shape = end - start - 1
+                    yield uttid, fds[wavid], start, shape
         else:
             with open(self.scp, "r") as fscp:
                 while True:
@@ -76,8 +77,8 @@ class AudioSheet(object):
                     if len(entry) != 2:
                         raise ValueError(f"Invalid line is found:\n>   {line}")
                     wavid, wavfd = entry
-                    samples, rate = sf.read(wavfd)
-                    yield wavid, wavfd, 0, len(samples) / rate, [len(samples)]
+                    samples, _ = sf.read(wavfd)
+                    yield wavid, wavfd, 0, len(samples)
 
 
 class TextSheet(object):

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Optional, Union
+from typing import Optional, Tuple
 
 import soundfile as sf
 import torch
@@ -9,28 +9,33 @@ from liteasr.utils.kaldiio import load_mat
 
 @dataclass
 class Audio(object):
-    uttid: str
+    __slots__ = [
+        "fd",
+        "start",
+        "shape",
+        "tokenids",
+        "text",
+    ]
+
     fd: str
-    start: Union[int, float]
-    end: Union[int, float]
-    shape: List[int]
-    tokenids: Optional[List[int]] = None
-    text: Optional[str] = None
+    start: Optional[int]
+    shape: int
+    tokenids: Optional[Tuple[int]]
+    text: Optional[str]
 
     @property
     def x(self):
-        if self.start == -1 or self.end == -1:  # feature map
+        if self.start is None:  # feature map
             x = torch.from_numpy(load_mat(self.fd))
         else:  # pcm samples
-            samples, rate = sf.read(self.fd)
+            samples, _ = sf.read(self.fd)
             x = torch.from_numpy(samples).float()
-            stt = round(self.start * rate)
-            x = x[stt:stt + self.shape[0]]
+            x = x[self.start:self.start + self.xlen]
         return x
 
     @property
     def xlen(self):
-        return self.shape[0]
+        return self.shape
 
     @property
     def y(self):

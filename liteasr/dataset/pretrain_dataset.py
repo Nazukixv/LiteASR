@@ -21,7 +21,9 @@ class RawAudioFileDataset(LiteasrDataset):
         self.batchify_policy = None
 
         _as = AudioSheet(data_cfg)
-        for info in _as:
+        for audio_info in _as:
+            uttid, fd, start, shape = audio_info
+            info = fd, start, shape, None, None
             self.data.append(Audio(*info))
 
             if len(self.data) % 10000 == 0:

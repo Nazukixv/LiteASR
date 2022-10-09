@@ -33,20 +33,23 @@ class AudioFileDataset(LiteasrDataset):
         _as = AudioSheet(data_dir)
         _ts = TextSheet(data_dir, vocab=vocab)
         for audio_info, text_info in zip(_as, _ts):
-            uttid, fd, start, end, shape = audio_info
+            uttid, fd, start, shape = audio_info
             uttid_t, tokenids, text = text_info
             assert uttid_t == uttid
             if not keep_raw:
-                info = uttid, fd, start, end, shape, tokenids
+                info = fd, start, shape, tokenids, None
             else:
-                info = uttid, fd, start, end, shape, tokenids, text
+                info = fd, start, shape, tokenids, text
             self.data.append(Audio(*info))
 
             if len(self.data) % 10000 == 0:
                 logger.info("number of loaded data: {}".format(len(self.data)))
         if len(self.data) % 10000 != 0:
             logger.info("number of loaded data: {}".format(len(self.data)))
-        self.feat_dim = self.data[0].shape[-1]
+
+        logger.info(self.data.__sizeof__())
+
+        self.feat_dim = self.data[0].x.shape[-1]
 
     def batchify(self, dataset_cfg: DatasetConfig):
         if dataset_cfg.batch_count == "seq":
