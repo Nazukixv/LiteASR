@@ -36,10 +36,7 @@ class AudioFileDataset(LiteasrDataset):
             uttid, fd, start, shape = audio_info
             uttid_t, tokenids, text = text_info
             assert uttid_t == uttid
-            if not keep_raw:
-                info = fd, start, shape, tokenids, None
-            else:
-                info = fd, start, shape, tokenids, text
+            info = fd, start, shape, tokenids, text if keep_raw else None
             self.data.append(Audio(*info))
 
             if len(self.data) % 10000 == 0:
