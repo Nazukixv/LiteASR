@@ -22,6 +22,8 @@ class AudioFileDataset(LiteasrDataset):
         self,
         split: str,
         data_dir: str,
+        dataset_cfg: DatasetConfig,
+        postprocess_cfg: PostProcessConfig,
         vocab,
         keep_raw=False,
     ):
@@ -45,6 +47,14 @@ class AudioFileDataset(LiteasrDataset):
             logger.info("number of loaded data: {}".format(len(self.data)))
 
         self.feat_dim = self.data[0].x.shape[-1]
+
+        # |              | train | valid | test  |
+        # | batchify     |   Y   |   Y   |   N   |
+        # | post-process |   Y   |   N   |   N   |
+        if self.split != "test":
+            self.batchify(dataset_cfg)
+        if self.split == "train":
+            self.set_postprocess(postprocess_cfg)
 
     def batchify(self, dataset_cfg: DatasetConfig):
         if dataset_cfg.batch_count == "seq":

@@ -8,7 +8,9 @@ from typing import List, Optional, Union
 from omegaconf import MISSING
 from omegaconf.listconfig import ListConfig
 
+from liteasr.config import DatasetConfig
 from liteasr.config import LiteasrDataclass
+from liteasr.config import PostProcessConfig
 from liteasr.dataclass.vocab import Vocab
 from liteasr.dataset import AudioFileDataset
 from liteasr.models import LiteasrModel
@@ -50,6 +52,8 @@ class ASRTask(LiteasrTask):
         self,
         split: str,
         data_dir: Union[str, ListConfig],
+        dataset_cfg: DatasetConfig,
+        postprocess_cfg: PostProcessConfig,
     ):
         assert split in ["train", "valid", "test"]
 
@@ -58,6 +62,8 @@ class ASRTask(LiteasrTask):
             self.datasets[split] = AudioFileDataset(
                 split=split,
                 data_dir=data_dir,
+                dataset_cfg=dataset_cfg,
+                postprocess_cfg=postprocess_cfg,
                 vocab=self.vocab,
                 keep_raw=split == "test",
             )
@@ -70,6 +76,8 @@ class ASRTask(LiteasrTask):
                     AudioFileDataset(
                         split=split,
                         data_dir=d_dir,
+                        dataset_cfg=dataset_cfg,
+                        postprocess_cfg=postprocess_cfg,
                         vocab=self.vocab,
                         keep_raw=split == "test",
                     )

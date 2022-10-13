@@ -15,7 +15,12 @@ logger = logging.getLogger(__name__)
 
 class RawAudioFileDataset(LiteasrDataset):
 
-    def __init__(self, data_cfg: str) -> None:
+    def __init__(
+        self,
+        data_cfg: str,
+        dataset_cfg: DatasetConfig,
+        postprocess_cfg: PostProcessConfig,
+    ) -> None:
         super().__init__()
         self.data = []
         self.batchify_policy = None
@@ -30,6 +35,9 @@ class RawAudioFileDataset(LiteasrDataset):
                 logger.info("number of loaded data: {}".format(len(self.data)))
         if len(self.data) % 10000 != 0:
             logger.info("number of loaded data: {}".format(len(self.data)))
+
+        self.batchify(dataset_cfg)
+        self.set_postprocess(postprocess_cfg)
 
     def batchify(self, dataset_cfg: DatasetConfig):
         self.batchify_policy = Wav2VecBatch(dataset_cfg)

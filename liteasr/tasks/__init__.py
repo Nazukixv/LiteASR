@@ -10,7 +10,9 @@ from omegaconf.listconfig import ListConfig
 from liteasr import criterions
 from liteasr import models
 from liteasr import optims
+from liteasr.config import DatasetConfig
 from liteasr.config import LiteasrDataclass
+from liteasr.config import PostProcessConfig
 from liteasr.criterions import LiteasrLoss
 from liteasr.models import LiteasrModel
 from liteasr.optims import LiteasrOptimizer
@@ -27,7 +29,13 @@ class LiteasrTask(object):
         self.cfg = cfg
         self.datasets = dict()
 
-    def load_dataset(self, split: str, data_dir: Union[str, ListConfig]):
+    def load_dataset(
+        self,
+        split: str,
+        data_dir: Union[str, ListConfig],
+        dataset_cfg: DatasetConfig,
+        postprocess_cfg: PostProcessConfig,
+    ):
         raise NotImplementedError
 
     def dataset(self, split: str):

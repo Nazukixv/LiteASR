@@ -6,7 +6,9 @@ from pathlib import Path
 
 from omegaconf import MISSING
 
+from liteasr.config import DatasetConfig
 from liteasr.config import LiteasrDataclass
+from liteasr.config import PostProcessConfig
 from liteasr.dataset import RawAudioFileDataset
 from liteasr.models import LiteasrModel
 from liteasr.tasks import LiteasrTask
@@ -30,11 +32,19 @@ class PreTrainTask(LiteasrTask):
         self.save_dir = cfg.save_dir
         Path(self.save_dir).mkdir(parents=True, exist_ok=True)
 
-    def load_dataset(self, split, data_cfg):
+    def load_dataset(
+        self,
+        split: str,
+        data_cfg: str,
+        dataset_cfg: DatasetConfig,
+        postprocess_cfg: PostProcessConfig,
+    ):
         assert split in ["train", "valid"]
 
         logger.info("loading {} data from {}".format(split, data_cfg))
-        self.datasets[split] = RawAudioFileDataset(data_cfg)
+        self.datasets[split] = RawAudioFileDataset(
+            data_cfg, dataset_cfg, postprocess_cfg
+        )
 
     def save_model(self, model_name: str, model: LiteasrModel):
         model_path = os.sep.join((self.save_dir, model_name))
