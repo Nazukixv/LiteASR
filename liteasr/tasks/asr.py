@@ -54,6 +54,7 @@ class ASRTask(LiteasrTask):
         data_dir: Union[str, ListConfig],
         dataset_cfg: DatasetConfig,
         postprocess_cfg: PostProcessConfig,
+        memory_save: bool = False,
     ):
         assert split in ["train", "valid", "test"]
 

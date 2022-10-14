@@ -61,8 +61,13 @@ def train(cfg: LiteasrConfig):
 
     # load training data
     logger.info("1. load data...")
-    task.load_dataset("train", task.cfg.train, cfg.dataset, cfg.postprocess)
-    task.load_dataset("valid", task.cfg.valid, cfg.dataset, cfg.postprocess)
+    if not cfg.common.memory_save:
+        task.load_dataset("train", task.cfg.train, cfg.dataset, cfg.postprocess)
+        task.load_dataset("valid", task.cfg.valid, cfg.dataset, cfg.postprocess)
+    else:
+        # TODO: Implement data loading in memory saving mode
+        task.load_dataset("train", task.cfg.train, cfg.dataset, cfg.postprocess)
+        task.load_dataset("valid", task.cfg.valid, cfg.dataset, cfg.postprocess)
 
     # build model
     model = task.build_model(cfg.model)

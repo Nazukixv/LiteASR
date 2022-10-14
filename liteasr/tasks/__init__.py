@@ -35,6 +35,7 @@ class LiteasrTask(object):
         data_dir: Union[str, ListConfig],
         dataset_cfg: DatasetConfig,
         postprocess_cfg: PostProcessConfig,
+        memory_save: bool,
     ):
         raise NotImplementedError
 

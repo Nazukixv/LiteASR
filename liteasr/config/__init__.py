@@ -24,6 +24,7 @@ class _TriggerConfig(LiteasrDataclass):
 class CommonConfig(LiteasrDataclass):
     seed: int = field(default=1)
     trigger: List[_TriggerConfig] = field(default_factory=lambda: [])
+    memory_save: bool = field(default=False)
 
 
 @dataclass

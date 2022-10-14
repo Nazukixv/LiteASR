@@ -38,6 +38,7 @@ class PreTrainTask(LiteasrTask):
         data_cfg: str,
         dataset_cfg: DatasetConfig,
         postprocess_cfg: PostProcessConfig,
+        memory_save: bool = False,
     ):
         assert split in ["train", "valid"]
 
