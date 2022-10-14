@@ -12,6 +12,34 @@ from liteasr.config import LiteasrConfig
 logger = logging.getLogger(__name__)
 
 
+def get_rank():
+    if dist.is_initialized():
+        return dist.get_rank()
+    else:
+        return -1
+
+
+def get_world_size():
+    if dist.is_initialized():
+        return dist.get_world_size()
+    else:
+        return -1
+
+
+def is_master():
+    if dist.is_initialized():
+        return dist.get_rank() == 0
+    else:
+        return True
+
+
+def is_subworld_master(cfg: DistributedConfig):
+    if dist.is_initialized():
+        return dist.get_rank() == sum(cfg.world_piece_size[:cfg.machine_rank])
+    else:
+        return True
+
+
 def barrier():
     if dist.is_initialized():
         dist.barrier()

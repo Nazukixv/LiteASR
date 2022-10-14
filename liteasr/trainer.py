@@ -13,6 +13,7 @@ from torch.utils.data.distributed import DistributedSampler
 from liteasr.config import LiteasrConfig
 from liteasr.criterions import LiteasrLoss
 from liteasr.distributed.ddp_model_wrapper import DDPModelWrapper
+from liteasr.distributed.utils import is_master
 from liteasr.models import LiteasrModel
 from liteasr.optims import LiteasrOptimizer
 from liteasr.tasks import LiteasrTask
@@ -45,7 +46,7 @@ class Trainer(object):
         train_set = self.task.dataset("train")
         valid_set = self.task.dataset("valid")
 
-        if self.cfg.distributed.world_size > 1:
+        if dist.is_initialized():
             train_sampler = DistributedSampler(train_set)
             valid_sampler = DistributedSampler(valid_set)
         else:
@@ -75,7 +76,7 @@ class Trainer(object):
     @property
     def model(self):
         if self._wrapped_model is None:
-            if self.cfg.distributed.world_size > 1:
+            if dist.is_initialized():
                 ddp_model = DistributedDataParallel(
                     module=self._model,
                     device_ids=[self.cfg.distributed.device_id],
@@ -115,12 +116,6 @@ class Trainer(object):
                 event = trigger_store[key](getattr(self, key))
                 self.event_manager.add_event(event)
 
-    def is_master(self):
-        if self.cfg.distributed.world_size > 1:
-            return dist.get_rank() == 0
-        else:
-            return True
-
     def stop(self):
         reach_max_epoch = (
             self.cfg.optimization.max_epoch >= 0
@@ -145,7 +140,7 @@ class Trainer(object):
             batch = to_device(batch, self.device)
 
             if (
-                self.cfg.distributed.world_size > 1
+                dist.is_initialized()
                 and i % self.cfg.optimization.accum_grad != 0
             ):
                 sync_context = self.model.no_sync
@@ -169,7 +164,7 @@ class Trainer(object):
                     # trigger iteration-wise events
                     self.event_manager.trigger_iteration_events(self)
                 else:
-                    if self.is_master():
+                    if is_master():
                         logger.warning(
                             "iteration {} is skipped since gradient is NaN".
                             format(self.iter + 1)
@@ -179,7 +174,7 @@ class Trainer(object):
                 self.loss = 0
 
     def report_loss(self):
-        if self.cfg.distributed.world_size > 1:
+        if dist.is_initialized():
             dist.reduce(self.loss, dst=0)
             self.loss /= self.cfg.distributed.world_size
         logger.info(
@@ -199,7 +194,7 @@ class Trainer(object):
             for bat in self.valid_iter:
                 bat = to_device(bat, self.device)
                 loss = self.criterion(self.model, *bat)
-                if self.cfg.distributed.world_size > 1:
+                if dist.is_initialized():
                     dist.reduce(loss, dst=0)
                     loss /= self.cfg.distributed.world_size
                 losses.append(loss)
@@ -216,12 +211,12 @@ class Trainer(object):
         self.model.train()
 
     def save_model(self):
-        if self.is_master():
+        if is_master():
             model_name = "model.ep.{}.pt".format(self.epoch)
             self.task.save_model(model_name, self.model)
 
     def inference(self):
-        if self.is_master():
+        if is_master():
             self.model.eval()
             with torch.no_grad():
                 for test_set in self.task.dataset("test"):
