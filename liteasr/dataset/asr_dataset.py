@@ -1,4 +1,8 @@
+import json
 import logging
+import math
+import os
+from pathlib import Path
 from typing import List
 
 from torch.nn.utils.rnn import pad_sequence
@@ -16,6 +20,22 @@ from liteasr.utils.transform import PostProcess
 logger = logging.getLogger(__name__)
 
 
+class SplittedFile(object):
+
+    def __init__(self, file_list, sector_size) -> None:
+        self.file_list = file_list
+        self.sector_size = sector_size
+
+    def __getitem__(self, index):
+        sector = index // self.sector_size
+        offset = index % self.sector_size
+        for i, line in enumerate(self.file_list[sector]):
+            if i == offset:
+                info = json.loads(line)
+                self.file_list[sector].seek(0)
+                return Audio(**info)
+
+
 class AudioFileDataset(LiteasrDataset):
 
     def __init__(
@@ -26,11 +46,20 @@ class AudioFileDataset(LiteasrDataset):
         postprocess_cfg: PostProcessConfig,
         vocab,
         keep_raw=False,
+        memory_save=False,
     ):
         super().__init__()
         self.split = split
         self.data = []
         self.batchify_policy = None
+        self._flag = memory_save and not os.path.isdir(f"{data_dir}/.split")
+
+        sector_size = 100
+
+        if self._flag:
+            Path(f"{data_dir}/.split").mkdir(parents=True)
+            index = 0
+            ftgt = open(f"{data_dir}/.split/audios.{index}.json", "w")
 
         _as = AudioSheet(data_dir)
         _ts = TextSheet(data_dir, vocab=vocab)
@@ -41,9 +70,27 @@ class AudioFileDataset(LiteasrDataset):
             info = fd, start, shape, tokenids, text if keep_raw else None
             self.data.append(Audio(*info))
 
-            if len(self.data) % 10000 == 0:
+            if len(self.data) % sector_size == 0:
                 logger.info("number of loaded data: {}".format(len(self.data)))
-        if len(self.data) % 10000 != 0:
+                if self._flag:
+                    index += 1
+                    ftgt.close()
+                    ftgt = open(f"{data_dir}/.split/audios.{index}.json", "w")
+
+            if self._flag:
+                ftgt.write(
+                    json.dumps(
+                        {
+                            "fd": fd,
+                            "start": start,
+                            "shape": shape,
+                            "tokenids": tokenids,
+                            "text": text,
+                        },
+                        ensure_ascii=False,
+                    ) + "\n"
+                )
+        if len(self.data) % sector_size != 0:
             logger.info("number of loaded data: {}".format(len(self.data)))
 
         self.feat_dim = self.data[0].x.shape[-1]
@@ -55,6 +102,16 @@ class AudioFileDataset(LiteasrDataset):
             self.batchify(dataset_cfg)
         if self.split == "train":
             self.set_postprocess(postprocess_cfg)
+
+        if memory_save:
+            self.files = SplittedFile(
+                [
+                    open(f"{data_dir}/.split/audios.{i}.json", "r")
+                    for i in range(math.ceil(len(self.data) / sector_size))
+                ],
+                sector_size=sector_size,
+            )
+            self.data = None
 
     def batchify(self, dataset_cfg: DatasetConfig):
         if dataset_cfg.batch_count == "seq":
@@ -94,11 +151,16 @@ class AudioFileDataset(LiteasrDataset):
         """overload [] operator"""
         if self.batchify_policy is None:
             return self.data[index]
-        else:
+        elif self.data is not None:
             return [self.data[idx] for idx in self.batchify_policy[index]]
+        else:
+            return [self.files[idx] for idx in self.batchify_policy[index]]
 
     def __len__(self):
         """overload len() method"""
+        # |                 | train | valid | test  |
+        # | data            |   N   |   N   |   Y   |
+        # | batchify_policy |   Y   |   Y   |   N   |
         if self.batchify_policy is None:
             return len(self.data)
         else:

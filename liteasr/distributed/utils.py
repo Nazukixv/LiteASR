@@ -91,6 +91,12 @@ def distributed_init(cfg: LiteasrConfig):
         logging.getLogger().setLevel(logging.WARNING)
 
 
+def switch_logger_level():
+    if get_rank() != 0:
+        current_level = logging.getLogger().level
+        logging.getLogger().setLevel(logging.WARNING - current_level)
+
+
 def distributed_func(rank, func, cfg: LiteasrConfig):
     # set root logger config
     logging.config.dictConfig(

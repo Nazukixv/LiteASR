@@ -67,6 +67,7 @@ class ASRTask(LiteasrTask):
                 postprocess_cfg=postprocess_cfg,
                 vocab=self.vocab,
                 keep_raw=split == "test",
+                memory_save=memory_save,
             )
             self.feat_dim = self.datasets[split].feat_dim
         elif isinstance(data_dir, ListConfig):

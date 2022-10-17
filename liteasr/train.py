@@ -65,8 +65,21 @@ def train(cfg: LiteasrConfig):
         task.load_dataset("train", task.cfg.train, cfg.dataset, cfg.postprocess)
         task.load_dataset("valid", task.cfg.valid, cfg.dataset, cfg.postprocess)
     else:
-        # TODO: Implement data loading in memory saving mode
-        task.load_dataset("train", task.cfg.train, cfg.dataset, cfg.postprocess)
+        assert dist_util.get_world_size() > 1
+
+        logger.info("1.1 split data...")
+        dist_util.switch_logger_level()
+        for rank in range(dist_util.get_world_size()):
+            if dist_util.get_rank() == rank:
+                task.load_dataset(
+                    "train",
+                    task.cfg.train,
+                    cfg.dataset,
+                    cfg.postprocess,
+                    memory_save=cfg.common.memory_save,
+                )
+            dist_util.barrier()
+        dist_util.switch_logger_level()
         task.load_dataset("valid", task.cfg.valid, cfg.dataset, cfg.postprocess)
 
     # build model
