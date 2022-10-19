@@ -63,6 +63,10 @@ class AudioFileDataset(LiteasrDataset):
 
         _as = AudioSheet(data_dir)
         _ts = TextSheet(data_dir, vocab=vocab)
+        assert len(_as) == len(_ts)
+
+        threshold = 1
+        logger.info("percentage of loaded data:")
         for audio_info, text_info in zip(_as, _ts):
             uttid, fd, start, shape = audio_info
             uttid_t, tokenids, text = text_info
@@ -70,8 +74,18 @@ class AudioFileDataset(LiteasrDataset):
             info = fd, start, shape, tokenids, text if keep_raw else None
             self.data.append(Audio(*info))
 
+            if len(self.data) / len(_as) >= threshold / 20:
+                logger.info(
+                    "|{:<20}| {:>4.0%} ({}/{})".format(
+                        "#" * threshold,
+                        threshold / 20,
+                        len(self.data),
+                        len(_as),
+                    )
+                )
+                threshold += 1
+
             if len(self.data) % sector_size == 0:
-                logger.info("number of loaded data: {}".format(len(self.data)))
                 if self._flag:
                     index += 1
                     ftgt.close()
@@ -90,8 +104,6 @@ class AudioFileDataset(LiteasrDataset):
                         ensure_ascii=False,
                     ) + "\n"
                 )
-        if len(self.data) % sector_size != 0:
-            logger.info("number of loaded data: {}".format(len(self.data)))
 
         self.feat_dim = self.data[0].x.shape[-1]
 

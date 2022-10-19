@@ -13,6 +13,7 @@ class BatchifyPolicy(object):
 
     def __init__(self, dataset_cfg: DatasetConfig):
         super().__init__()
+        self._num = 0
         self.data = []
         self.minibatch = []
         self.dataset_cfg = dataset_cfg
@@ -38,7 +39,19 @@ class BatchifyPolicy(object):
         """Pop the minibatch into data, then empty the minibatch."""
 
         self.data.append(self.minibatch)
+        self._num += len(self.minibatch)
         self.minibatch = []
+
+        if self._num / self._all >= self._threshold / 20:
+            logger.info(
+                "|{:<20}| {:>4.0%} ({}/{})".format(
+                    "#" * self._threshold,
+                    self._threshold / 20,
+                    self._num,
+                    self._all,
+                )
+            )
+            self._threshold += 1
 
     def refresh(self):
         """Refresh the state of minibatch."""
@@ -48,6 +61,10 @@ class BatchifyPolicy(object):
     def batchify(self, indices, samples):
         assert len(indices) == len(samples), f"{len(samples)}"
         self.refresh()
+        self._all = len(indices)
+        self._threshold = 1
+
+        logger.info("percentage of bachified data:")
         for idx in indices:
             self.sample = samples[idx]
             if self.full:

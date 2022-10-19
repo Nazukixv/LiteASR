@@ -1,8 +1,19 @@
 import os
+from typing import Optional
 
 import soundfile as sf
 
 from liteasr.dataclass.vocab import Vocab
+
+
+def _get_lineno(file_name: Optional[str]) -> int:
+    if file_name is None:
+        return 0
+
+    with open(file_name, "r") as f:
+        for i, _ in enumerate(f):
+            pass
+        return i + 1
 
 
 class AudioSheet(object):
@@ -16,10 +27,12 @@ class AudioSheet(object):
             assert "utt2num_frames" in all_files
             self.shape = f"{data_cfg}/utt2num_frames"
             self.segments = None
+            self.lines = _get_lineno(self.scp)
         elif "wav.scp" in all_files:
             self.scp = f"{data_cfg}/wav.scp"
             self.segments = f"{data_cfg}/segments" \
                 if "segments" in all_files else None
+            self.lines = max(_get_lineno(self.scp), _get_lineno(self.segments))
         else:
             raise FileNotFoundError(f"wav.scp not found in {data_cfg}")
 
@@ -80,12 +93,16 @@ class AudioSheet(object):
                     samples, _ = sf.read(wavfd)
                     yield wavid, wavfd, 0, len(samples)
 
+    def __len__(self):
+        return self.lines
+
 
 class TextSheet(object):
 
     def __init__(self, data_cfg, vocab: Vocab):
         self.text = f"{data_cfg}/text"
         self.vocab = vocab
+        self.lines = _get_lineno(self.text)
 
     def __iter__(self):
         with open(self.text, 'r') as ftxt:
@@ -97,3 +114,6 @@ class TextSheet(object):
                 uttid, *tokens = entry
                 text = "".join(tokens)  # naive impl
                 yield uttid, self.vocab.lookup(text), text
+
+    def __len__(self):
+        return self.lines
