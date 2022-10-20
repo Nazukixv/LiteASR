@@ -14,6 +14,7 @@ from liteasr.dataset.liteasr_dataset import LiteasrDataset
 from liteasr.utils.batchify import FrameBatch
 from liteasr.utils.batchify import SeqBatch
 from liteasr.utils.transform import PostProcess
+from liteasr.utils.utils import dec2hex
 
 logger = logging.getLogger(__name__)
 
@@ -87,9 +88,12 @@ class AudioFileDataset(LiteasrDataset):
         if _is_prior:
             self.dump_path.mkdir(parents=True)
             for i, batch_indices in enumerate(self.batchify_policy):
+                prefix, hex_i = dec2hex(i)
+                (self.dump_path / prefix).mkdir(exist_ok=True)
                 pickle.dump(
                     [self.data[idx] for idx in batch_indices],
-                    file=(self.dump_path / f"batch.{i}").open("wb"),
+                    file=(self.dump_path / prefix
+                          / f"batch.{hex_i}").open("wb"),
                 )
 
         # release memory
@@ -138,8 +142,9 @@ class AudioFileDataset(LiteasrDataset):
         elif self.data != []:
             return self.data[index]
         else:
+            prefix, hex_i = dec2hex(index)
             return pickle.load(
-                file=(self.dump_path / f"batch.{index}").open("rb")
+                file=(self.dump_path / prefix / f"batch.{hex_i}").open("rb")
             )
 
     def __len__(self):
@@ -149,4 +154,9 @@ class AudioFileDataset(LiteasrDataset):
         elif self.data != []:
             return len(self.data)
         else:
-            return len(list(self.dump_path.iterdir()))
+            return sum(
+                [
+                    len(list((self.dump_path / sub_dir).iterdir()))
+                    for sub_dir in self.dump_path.iterdir()
+                ]
+            )
