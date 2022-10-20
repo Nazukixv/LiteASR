@@ -1,8 +1,6 @@
-import json
 import logging
-import math
-import os
 from pathlib import Path
+import pickle
 from typing import List
 
 from torch.nn.utils.rnn import pad_sequence
@@ -18,22 +16,6 @@ from liteasr.utils.batchify import SeqBatch
 from liteasr.utils.transform import PostProcess
 
 logger = logging.getLogger(__name__)
-
-
-class SplittedFile(object):
-
-    def __init__(self, file_list, sector_size) -> None:
-        self.file_list = file_list
-        self.sector_size = sector_size
-
-    def __getitem__(self, index):
-        sector = index // self.sector_size
-        offset = index % self.sector_size
-        for i, line in enumerate(self.file_list[sector]):
-            if i == offset:
-                info = json.loads(line)
-                self.file_list[sector].seek(0)
-                return Audio(**info)
 
 
 class AudioFileDataset(LiteasrDataset):
@@ -52,14 +34,12 @@ class AudioFileDataset(LiteasrDataset):
         self.split = split
         self.data = []
         self.batchify_policy = None
-        self._flag = memory_save and not os.path.isdir(f"{data_dir}/.split")
+        self.dump_path = Path(data_dir, ".dump")
+        if split == "train":
+            self.set_postprocess(postprocess_cfg)
 
-        sector_size = 100
-
-        if self._flag:
-            Path(f"{data_dir}/.split").mkdir(parents=True)
-            index = 0
-            ftgt = open(f"{data_dir}/.split/audios.{index}.json", "w")
+        _is_prior = memory_save and not self.dump_path.is_dir()
+        _is_other = memory_save and self.dump_path.is_dir()
 
         _as = AudioSheet(data_dir)
         _ts = TextSheet(data_dir, vocab=vocab)
@@ -85,45 +65,37 @@ class AudioFileDataset(LiteasrDataset):
                 )
                 threshold += 1
 
-            if len(self.data) % sector_size == 0:
-                if self._flag:
-                    index += 1
-                    ftgt.close()
-                    ftgt = open(f"{data_dir}/.split/audios.{index}.json", "w")
-
-            if self._flag:
-                ftgt.write(
-                    json.dumps(
-                        {
-                            "fd": fd,
-                            "start": start,
-                            "shape": shape,
-                            "tokenids": tokenids,
-                            "text": text,
-                        },
-                        ensure_ascii=False,
-                    ) + "\n"
-                )
+            # In `memory_save` mode, processes that are not prior
+            # do not have to load whole dataset.They load first data
+            # just to get `self.feat_dim`.
+            if _is_other:
+                break
 
         self.feat_dim = self.data[0].x.shape[-1]
 
-        # |              | train | valid | test  |
-        # | batchify     |   Y   |   Y   |   N   |
-        # | post-process |   Y   |   N   |   N   |
-        if self.split != "test":
-            self.batchify(dataset_cfg)
-        if self.split == "train":
-            self.set_postprocess(postprocess_cfg)
+        # |                   | train | valid | test  |
+        # | ----------------------------------------- |
+        # | batchify (normal) |   Y   |   Y   |   N   |
+        # | ----------------------------------------- |
+        # | batchify (prior)  |   Y   |   Y   |   N   |
+        # | batchify (other)  |   N   |   Y   |   N   |
+        if not memory_save or _is_prior:
+            if split != "test":
+                self.batchify(dataset_cfg)
 
+        # dump all the batches
+        if _is_prior:
+            self.dump_path.mkdir(parents=True)
+            for i, batch_indices in enumerate(self.batchify_policy):
+                pickle.dump(
+                    [self.data[idx] for idx in batch_indices],
+                    file=(self.dump_path / f"batch.{i}").open("wb"),
+                )
+
+        # release memory
         if memory_save:
-            self.files = SplittedFile(
-                [
-                    open(f"{data_dir}/.split/audios.{i}.json", "r")
-                    for i in range(math.ceil(len(self.data) / sector_size))
-                ],
-                sector_size=sector_size,
-            )
-            self.data = None
+            self.data = []
+            self.batchify_policy = None
 
     def batchify(self, dataset_cfg: DatasetConfig):
         if dataset_cfg.batch_count == "seq":
@@ -161,19 +133,20 @@ class AudioFileDataset(LiteasrDataset):
 
     def __getitem__(self, index):
         """overload [] operator"""
-        if self.batchify_policy is None:
-            return self.data[index]
-        elif self.data is not None:
+        if self.batchify_policy is not None:
             return [self.data[idx] for idx in self.batchify_policy[index]]
+        elif self.data != []:
+            return self.data[index]
         else:
-            return [self.files[idx] for idx in self.batchify_policy[index]]
+            return pickle.load(
+                file=(self.dump_path / f"batch.{index}").open("rb")
+            )
 
     def __len__(self):
         """overload len() method"""
-        # |                 | train | valid | test  |
-        # | data            |   N   |   N   |   Y   |
-        # | batchify_policy |   Y   |   Y   |   N   |
-        if self.batchify_policy is None:
+        if self.batchify_policy is not None:
+            return len(self.batchify_policy)
+        elif self.data != []:
             return len(self.data)
         else:
-            return len(self.batchify_policy)
+            return len(list(self.dump_path.iterdir()))
