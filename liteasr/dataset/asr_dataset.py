@@ -88,12 +88,14 @@ class AudioFileDataset(LiteasrDataset):
         if _is_prior:
             self.dump_path.mkdir(parents=True)
             for i, batch_indices in enumerate(self.batchify_policy):
-                prefix, hex_i = dec2hex(i)
-                (self.dump_path / prefix).mkdir(exist_ok=True)
+                prefix, infix, suffix = dec2hex(i)
+                (self.dump_path / prefix / infix).mkdir(
+                    parents=True, exist_ok=True
+                )
                 pickle.dump(
                     [self.data[idx] for idx in batch_indices],
-                    file=(self.dump_path / prefix
-                          / f"batch.{hex_i}").open("wb"),
+                    file=(self.dump_path / prefix / infix
+                          / f"{suffix}.batch").open("wb"),
                 )
 
         # release memory
@@ -142,9 +144,10 @@ class AudioFileDataset(LiteasrDataset):
         elif self.data != []:
             return self.data[index]
         else:
-            prefix, hex_i = dec2hex(index)
+            prefix, infix, suffix = dec2hex(index)
             return pickle.load(
-                file=(self.dump_path / prefix / f"batch.{hex_i}").open("rb")
+                file=(self.dump_path / prefix / infix
+                      / f"{suffix}.batch").open("rb")
             )
 
     def __len__(self):
@@ -154,9 +157,10 @@ class AudioFileDataset(LiteasrDataset):
         elif self.data != []:
             return len(self.data)
         else:
-            return sum(
-                [
-                    len(list((self.dump_path / sub_dir).iterdir()))
-                    for sub_dir in self.dump_path.iterdir()
-                ]
-            )
+            count = 0
+            for suffix in self.dump_path.iterdir():
+                for infix in (self.dump_path / suffix).iterdir():
+                    count += len(
+                        list((self.dump_path / suffix / infix).iterdir())
+                    )
+            return count

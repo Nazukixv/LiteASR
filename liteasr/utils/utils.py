@@ -9,9 +9,9 @@ def dec2hex(decimal: int) -> Tuple[str, str]:
     :Example:
 
     >>> dec2hex(10)
-    ('0a', '0a')
+    ('00', '00', '00a')
     >>> dec2hex(100000)
-    ('18', '186a0')
+    ('00', '18', '6a0')
     """
-    hexadecimal = "{:0>2x}".format(decimal)
-    return hexadecimal[:2], hexadecimal
+    hexadecimal = "{:0>7x}".format(decimal)
+    return hexadecimal[:2], hexadecimal[2:4], hexadecimal[4:7]
