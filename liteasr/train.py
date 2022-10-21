@@ -66,8 +66,15 @@ def train(cfg: LiteasrConfig):
         task.load_dataset("valid", task.cfg.valid, cfg.dataset, cfg.postprocess)
     else:
         assert dist_util.get_world_size() > 1
+        # choose sub-world master processes as prior processes
+        # prior processes load dataset sequentially
+        # basically the maximum possible number of prior processes
+        # is that of machines
         for rank in range(dist_util.get_world_size()):
-            if dist_util.get_rank() == rank:
+            if (
+                dist_util.get_rank() == rank
+                and dist_util.is_subworld_master(cfg.distributed)
+            ):
                 task.load_dataset(
                     "train",
                     task.cfg.train,
@@ -76,6 +83,16 @@ def train(cfg: LiteasrConfig):
                     memory_save=cfg.common.memory_save,
                 )
             dist_util.barrier()
+
+        # other processes load dataset in parallel
+        if not dist_util.is_subworld_master(cfg.distributed):
+            task.load_dataset(
+                "train",
+                task.cfg.train,
+                cfg.dataset,
+                cfg.postprocess,
+                memory_save=cfg.common.memory_save,
+            )
         task.load_dataset("valid", task.cfg.valid, cfg.dataset, cfg.postprocess)
 
     # build model
