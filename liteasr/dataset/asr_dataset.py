@@ -57,8 +57,8 @@ class AudioFileDataset(LiteasrDataset):
 
             if len(self.data) / len(_as) >= threshold / 20:
                 logger.info(
-                    "|{:<20}| {:>4.0%} ({}/{})".format(
-                        "#" * threshold,
+                    "[{:<20}] {:>4.0%} ({}/{})".format(
+                        "=" * (threshold - 1) + ">",
                         threshold / 20,
                         len(self.data),
                         len(_as),

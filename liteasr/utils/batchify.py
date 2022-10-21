@@ -44,8 +44,8 @@ class BatchifyPolicy(object):
 
         if self._num / self._all >= self._threshold / 20:
             logger.info(
-                "|{:<20}| {:>4.0%} ({}/{})".format(
-                    "#" * self._threshold,
+                "[{:<20}] {:>4.0%} ({}/{})".format(
+                    "=" * (self._threshold - 1) + ">",
                     self._threshold / 20,
                     self._num,
                     self._all,
