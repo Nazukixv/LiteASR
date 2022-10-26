@@ -2,7 +2,7 @@
 
 import importlib
 import os
-from typing import Union
+from typing import Optional, Union
 
 from hydra.core.config_store import ConfigStore
 from omegaconf.listconfig import ListConfig
@@ -33,8 +33,8 @@ class LiteasrTask(object):
         self,
         split: str,
         data_dir: Union[str, ListConfig],
-        dataset_cfg: DatasetConfig,
-        postprocess_cfg: PostProcessConfig,
+        dataset_cfg: Optional[DatasetConfig],
+        postprocess_cfg: Optional[PostProcessConfig],
         memory_save: bool,
     ):
         raise NotImplementedError

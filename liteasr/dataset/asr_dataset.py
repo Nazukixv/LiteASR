@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 import pickle
-from typing import List
+from typing import List, Optional
 
 from torch.nn.utils.rnn import pad_sequence
 
@@ -25,8 +25,8 @@ class AudioFileDataset(LiteasrDataset):
         self,
         split: str,
         data_dir: str,
-        dataset_cfg: DatasetConfig,
-        postprocess_cfg: PostProcessConfig,
+        dataset_cfg: Optional[DatasetConfig],
+        postprocess_cfg: Optional[PostProcessConfig],
         vocab,
         keep_raw=False,
         memory_save=False,
@@ -36,7 +36,7 @@ class AudioFileDataset(LiteasrDataset):
         self.data = []
         self.batchify_policy = None
         self.dump_path = Path(data_dir, ".dump")
-        if split == "train":
+        if postprocess_cfg is not None:
             self.set_postprocess(postprocess_cfg)
 
         _is_prior = memory_save and not self.dump_path.is_dir()
@@ -81,7 +81,7 @@ class AudioFileDataset(LiteasrDataset):
         # | batchify (prior)  |   Y   |   Y   |   N   |
         # | batchify (other)  |   N   |   Y   |   N   |
         if not memory_save or _is_prior:
-            if split != "test":
+            if dataset_cfg is not None:
                 self.batchify(dataset_cfg)
 
         # dump all the batches
