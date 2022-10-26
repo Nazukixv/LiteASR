@@ -106,7 +106,7 @@ def infer(cfg: LiteasrConfig):
 
     # load test data
     logger.info("1. load data...")
-    task.load_dataset("test", task.cfg.test)
+    task.load_dataset("test", task.cfg.test, cfg.dataset, cfg.postprocess)
 
     # build model
     model = task.build_model(cfg.model)
