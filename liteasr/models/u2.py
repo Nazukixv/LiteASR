@@ -114,13 +114,7 @@ class U2(LiteasrModel):
         self.sos = cfg.vocab_size - 1
         self.eos = cfg.vocab_size - 1
 
-    def forward(
-        self,
-        xs,
-        xlens: List[int],
-        ys,
-        ylens: List[int],
-    ):
+    def forward(self, xs, xlens, ys, ylens):
         xs_in, xs_mask, ys_in, ys_mask = self._preprocess(xs, xlens, ys, ylens)
 
         # encoder
@@ -329,16 +323,15 @@ class U2(LiteasrModel):
 
         return hyps[best_index][0]
 
-    def get_pred_len(self, xlens: List[int]) -> Tensor:
-        pred_len = torch.tensor(xlens)
-        pred_len = ((pred_len - 1) // 2 - 1) // 2
+    def get_pred_len(self, xlens) -> Tensor:
+        pred_len = ((xlens - 1) // 2 - 1) // 2
         return pred_len
 
-    def get_target(self, ys, ylens: List[int]) -> Tuple[Tensor, Tensor]:
+    def get_target(self, ys, ylens) -> Tuple[Tensor, Tensor]:
         # tgt_attn
         ignore = torch.tensor(self.ignore).repeat(ys.size(0), 1)
         tgt_attn = torch.cat([ys, ignore.to(ys.device)], dim=1)
-        index = (torch.arange(len(ylens)), torch.tensor(ylens))
+        index = (torch.arange(len(ylens)), ylens)
         tgt_attn[index] = self.eos
 
         # tgt_ctc
@@ -346,22 +339,16 @@ class U2(LiteasrModel):
 
         return tgt_attn, tgt_ctc
 
-    def get_target_len(self, ylens: List[int]) -> Tensor:
-        target_len = torch.tensor(ylens)
+    def get_target_len(self, ylens) -> Tensor:
+        target_len = ylens
         return target_len
 
-    def _preprocess(
-        self,
-        xs: Tensor,
-        xlens: List[int],
-        ys: Tensor,
-        ylens: List[int],
-    ):
+    def _preprocess(self, xs, xlens, ys, ylens):
         # xs_in
         xs_in = xs
 
         # xs_mask
-        xs_mask = padding_mask(xlens).to(device=xs.device)
+        xs_mask = padding_mask(xlens)
 
         # ys_in
         ys_ = ys.masked_fill(ys == self.ignore, self.eos)
@@ -372,7 +359,7 @@ class U2(LiteasrModel):
         ys_in = torch.cat([sos, ys_], dim=1)
 
         # ys_mask
-        ys_mask = padding_mask([yl + 1 for yl in ylens]).to(device=ys.device)
+        ys_mask = padding_mask(ylens + 1)
 
         return xs_in, xs_mask, ys_in, ys_mask
 

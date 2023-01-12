@@ -3,6 +3,7 @@ from pathlib import Path
 import pickle
 from typing import List, Optional
 
+import torch
 from torch.nn.utils.rnn import pad_sequence
 
 from liteasr.config import DatasetConfig
@@ -131,7 +132,9 @@ class AudioFileDataset(LiteasrDataset):
             ylens.append(sample.ylen)
         padded_xs = pad_sequence(xs, batch_first=True, padding_value=0)
         padded_ys = pad_sequence(ys, batch_first=True, padding_value=-1)
-        return padded_xs, xlens, padded_ys, ylens
+        tensor_xlens = torch.tensor(xlens).long()
+        tensor_ylens = torch.tensor(ylens).long()
+        return padded_xs, tensor_xlens, padded_ys, tensor_ylens
 
     @property
     def train(self):

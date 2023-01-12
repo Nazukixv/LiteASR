@@ -1,17 +1,14 @@
 """Functions of mask generation."""
 
-from typing import List
-
 import numpy as np
 import torch
 from torch import Tensor
 
 
-def padding_mask(size: List[int]) -> Tensor:
+def padding_mask(size: Tensor) -> Tensor:
     """Returns mask which masks the padding part of tensor.
 
-    :param size: sequence of unmasking lengths
-    :type size: List[int]
+    :param Tensor size: sequence of unmasking lengths
     :return: mask
     :rtype: Tensor
 
@@ -24,8 +21,8 @@ def padding_mask(size: List[int]) -> Tensor:
 
     """
 
-    base = torch.arange(max(size)).unsqueeze(0)
-    lens = torch.tensor(size).unsqueeze(1)
+    base = torch.arange(max(size)).unsqueeze(0).to(device=size.device)
+    lens = size.unsqueeze(1)
     mask = base >= lens
     return mask
 

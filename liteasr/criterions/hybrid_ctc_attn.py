@@ -71,7 +71,7 @@ class HybridCTCLoss(LiteasrLoss):
             h_ctc,
             tgt_ctc,
             model.get_pred_len(xlens),
-            torch.tensor(ylens),
+            ylens,
         )
         loss_ctc = loss_ctc / ys.size(0)
 

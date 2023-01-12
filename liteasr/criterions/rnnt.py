@@ -43,12 +43,11 @@ class RNNTLoss(LiteasrLoss):
         return cls(cfg, task)
 
     def __call__(self, model, xs, xlens, ys, ylens):
-        device = xs.device
         pred_pad = model(xs, xlens, ys, ylens)
         model = model.module if not isinstance(model, LiteasrModel) else model
-        target = model.get_target(ys, ylens).int().to(device)
-        pred_len = model.get_pred_len(xlens).int().to(device)
-        target_len = model.get_target_len(ylens).int().to(device)
+        target = model.get_target(ys, ylens).int()
+        pred_len = model.get_pred_len(xlens).int()
+        target_len = model.get_target_len(ylens).int()
         return self._real_call(pred_pad, target, pred_len, target_len)
 
     def _real_call(self, pred_pad, target, pred_len, target_len):

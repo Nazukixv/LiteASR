@@ -97,6 +97,7 @@ class Transducer(LiteasrModel):
             pos_dropout_rate=cfg.enc_pos_dropout_rate,
             attn_dropout_rate=cfg.enc_attn_dropout_rate,
             ff_dropout_rate=cfg.enc_ff_dropout_rate,
+            activation=cfg.activation,
             arch=cfg.enc_arch.value,
         )
 
@@ -117,21 +118,13 @@ class Transducer(LiteasrModel):
 
         self._init_module()
 
-    def forward(
-        self,
-        xs,
-        xlens: List[int],
-        ys,
-        ylens: List[int],
-    ):
+    def forward(self, xs, xlens, ys, ylens):
         """Forward function of Transducer.
 
         :param Tensor xs: Padded audio input with shape (`Batch`, `Tmax`, `*`)
-        :param xlens: Time duration of x (`Batch`)
-        :type xlens: List[int]
+        :param Tensor xlens: Time duration of x (`Batch`)
         :param Tensor ys: Padded token indices with shape (`Batch`, `Lmax`)
         :param Tensor ylens: Length of transcripted text of y (`Batch`)
-        :type ylens: List[int]
         :return: Joint tensor (`Batch`, `Fmax`, `Lmax` + 1, `Vocab`)
         :rtype: Tensor
 
@@ -218,8 +211,7 @@ class Transducer(LiteasrModel):
         return best_hyp.yseq
 
     def get_pred_len(self, xlens):
-        pred_len = torch.tensor(xlens)
-        pred_len = ((pred_len - 1) // 2 - 1) // 2
+        pred_len = ((xlens - 1) // 2 - 1) // 2
         return pred_len
 
     def get_target(self, ys, ylens):
@@ -227,7 +219,7 @@ class Transducer(LiteasrModel):
         return target
 
     def get_target_len(self, ylens):
-        target_len = torch.tensor(ylens)
+        target_len = ylens
         return target_len
 
     def joint(self, h_enc, h_dec):
@@ -236,18 +228,12 @@ class Transducer(LiteasrModel):
         h_jnt = self.lin_jnt(self.joint_activation(h_enc + h_dec))
         return h_jnt
 
-    def _preprocess(
-        self,
-        xs,
-        xlens: List[int],
-        ys,
-        ylens: List[int],
-    ):
+    def _preprocess(self, xs, xlens, ys, ylens):
         # xs_in
         xs_in = xs
 
         # xs_mask
-        xs_mask = padding_mask(xlens).to(device=xs.device)
+        xs_mask = padding_mask(xlens)
 
         # ys_in
         ys_ = ys.masked_fill(ys == self.ignore, 0)
@@ -255,7 +241,7 @@ class Transducer(LiteasrModel):
         ys_in = torch.cat([blank, ys_], dim=1)
 
         # ys_mask
-        ys_mask = padding_mask([yl + 1 for yl in ylens]).to(device=ys.device)
+        ys_mask = padding_mask(ylens + 1)
 
         return xs_in, ys_in, xs_mask, ys_mask
 
