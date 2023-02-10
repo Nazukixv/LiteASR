@@ -26,7 +26,6 @@ class PreTrainConfig(LiteasrDataclass):
 
 @register_task("pretrain", dataclass=PreTrainConfig)
 class PreTrainTask(LiteasrTask):
-
     def __init__(self, cfg: PreTrainConfig):
         super().__init__(cfg)
         self.save_dir = cfg.save_dir

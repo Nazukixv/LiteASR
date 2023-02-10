@@ -7,7 +7,6 @@ import torch.nn as nn
 
 
 class PositionalEncoding(nn.Module):
-
     def __init__(
         self,
         h_dim: int,
@@ -31,8 +30,7 @@ class PositionalEncoding(nn.Module):
         pe = torch.zeros(self.max_len, self.h_dim)
         position = torch.arange(0, self.max_len).unsqueeze(1).float()
         div_term = torch.exp(
-            torch.arange(0, self.h_dim, 2).float()
-            * -(math.log(10000.0) / self.h_dim)
+            torch.arange(0, self.h_dim, 2).float() * -(math.log(10000.0) / self.h_dim)
         )
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
@@ -53,13 +51,12 @@ class PositionalEncoding(nn.Module):
             self.extend_pe(x)
         if self.pe.dtype != x.dtype or str(self.pe.device) != str(x.device):
             self.pe = self.pe.to(device=x.device, dtype=x.dtype)
-        x = x * self.scale + self.pe[:, :x.size(1)]
+        x = x * self.scale + self.pe[:, : x.size(1)]
         x = self.dropout(x)
         return x
 
 
 class RelativePositionalEncoding(PositionalEncoding):
-
     def __init__(
         self,
         h_dim: int,
@@ -74,5 +71,5 @@ class RelativePositionalEncoding(PositionalEncoding):
         if self.pe.dtype != x.dtype or str(self.pe.device) != str(x.device):
             self.pe = self.pe.to(device=x.device, dtype=x.dtype)
         x = x * self.scale
-        pos_emb = self.pe[:, :x.size(1)]
+        pos_emb = self.pe[:, : x.size(1)]
         return self.dropout(x), self.dropout(pos_emb)

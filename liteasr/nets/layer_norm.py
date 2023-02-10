@@ -6,7 +6,6 @@ import torch.nn.functional as F
 
 
 class LayerNorm(nn.LayerNorm):
-
     def __init__(self, nout: int, dim=-1):
         super().__init__(nout, eps=1e-12)
         self.dim = dim
@@ -31,7 +30,6 @@ class LayerNorm(nn.LayerNorm):
 
 
 class Fp32LayerNorm(nn.LayerNorm):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

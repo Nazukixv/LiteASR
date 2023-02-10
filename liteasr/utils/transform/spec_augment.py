@@ -13,7 +13,6 @@ from liteasr.utils.transform import register_transformation
 
 @register_transformation("spec_aug")
 class SpecAugment(object):
-
     def __init__(self, cfg: _SpecAugmentConfig):
         self.cfg = cfg
 
@@ -34,9 +33,7 @@ class SpecAugment(object):
             return x
         # NOTE: randrange(a, b) emits a, a + 1, ..., b - 1
         center = random.randrange(window, t - window)
-        warped = random.randrange(
-            center - window, center + window
-        ) + 1  # 1 ... t - 1
+        warped = random.randrange(center - window, center + window) + 1  # 1 ... t - 1
 
         left = Image.fromarray(x[:center]).resize(
             (x.shape[1], warped),

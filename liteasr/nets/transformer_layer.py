@@ -8,7 +8,6 @@ from liteasr.nets.layer_norm import LayerNorm
 
 
 class EncoderLayer(nn.Module):
-
     def __init__(
         self,
         size,
@@ -65,7 +64,7 @@ class EncoderLayer(nn.Module):
         self,
         x,
         mask: Optional[torch.Tensor] = None,
-        cache: Optional[torch.Tensor] = None
+        cache: Optional[torch.Tensor] = None,
     ):
         x = self.mha(x, mask=mask, cache=cache)
         x = self.ff(x)
@@ -78,7 +77,6 @@ class EncoderLayer(nn.Module):
 
 
 class RelativeEncoderLayer(EncoderLayer):
-
     def __init__(
         self,
         size,
@@ -139,7 +137,6 @@ class RelativeEncoderLayer(EncoderLayer):
 
 
 class DecoderLayer(EncoderLayer):
-
     def __init__(
         self,
         size,

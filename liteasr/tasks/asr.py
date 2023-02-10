@@ -36,9 +36,8 @@ class ASRConfig(LiteasrDataclass):
     save_dir: str = field(default="ckpts")
 
 
-@register_task('asr', dataclass=ASRConfig)
+@register_task("asr", dataclass=ASRConfig)
 class ASRTask(LiteasrTask):
-
     def __init__(self, cfg: ASRConfig):
         super().__init__(cfg)
         self.vocab = Vocab(cfg.vocab)

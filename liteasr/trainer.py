@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 
 
 class Trainer(object):
-
     def __init__(
         self,
         cfg: LiteasrConfig,
@@ -140,10 +139,7 @@ class Trainer(object):
             # train one step
             batch = to_device(batch, self.device)
 
-            if (
-                dist.is_initialized()
-                and i % self.cfg.optimization.accum_grad != 0
-            ):
+            if dist.is_initialized() and i % self.cfg.optimization.accum_grad != 0:
                 sync_context = self.model.no_sync
             else:
                 sync_context = nullcontext
@@ -167,8 +163,9 @@ class Trainer(object):
                 else:
                     if is_master():
                         logger.warning(
-                            "iteration {} is skipped since gradient is NaN".
-                            format(self.iter + 1)
+                            "iteration {} is skipped since gradient is NaN".format(
+                                self.iter + 1
+                            )
                         )
 
                 self.optimizer.zero_grad()

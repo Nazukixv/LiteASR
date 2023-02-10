@@ -19,7 +19,6 @@ ARCH_CONFIG_REGISTRY = {}  # arch_name  -> arch_fn
 
 
 class LiteasrModel(nn.Module):
-
     def __init__(self):
         super().__init__()
 
@@ -34,6 +33,7 @@ class LiteasrModel(nn.Module):
 
     def script(self):
         import torch
+
         _self = torch.jit.script(self)
         return _self
 
@@ -70,7 +70,6 @@ def build_model(cfg, task) -> LiteasrModel:
 
 
 def register_model(name, dataclass=None):
-
     def register_model_cls(cls):
         MODEL_REGISTRY[name] = cls
 
@@ -89,7 +88,6 @@ def register_model(name, dataclass=None):
 
 # maybe deprecated?
 def register_model_architecture(model_name, arch_name):
-
     def register_model_arch_fn(fn):
         ARCH_MODEL_REGISTRY[arch_name] = MODEL_REGISTRY[model_name]
         ARCH_MODEL_NAME_REGISTRY[arch_name] = model_name
@@ -105,8 +103,9 @@ models_dir = os.path.dirname(__file__)
 for file in os.listdir(models_dir):
     path = os.path.join(models_dir, file)
     if (
-        not file.startswith("_") and not file.startswith(".")
+        not file.startswith("_")
+        and not file.startswith(".")
         and (file.endswith(".py") or os.path.isdir(path))
     ):
-        model_name = file[:file.find(".py")] if file.endswith(".py") else file
+        model_name = file[: file.find(".py")] if file.endswith(".py") else file
         module = importlib.import_module("liteasr.models." + model_name)

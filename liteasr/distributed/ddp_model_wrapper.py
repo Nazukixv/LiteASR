@@ -6,7 +6,6 @@ from liteasr.models import LiteasrModel
 
 
 class DDPModelWrapper(LiteasrModel):
-
     def __init__(self, ddp_module: nn.Module):
         super().__init__()
         assert hasattr(

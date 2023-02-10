@@ -14,7 +14,6 @@ CRITERION_CLASS_NAMES = set()
 
 
 class LiteasrLoss(object):
-
     def __init__(self, cfg):
         super().__init__()
         self.cfg = cfg
@@ -40,7 +39,6 @@ def build_criterion(cfg, task) -> LiteasrLoss:
 
 
 def register_criterion(name, dataclass=None):
-
     def register_criterion_cls(cls):
         CRITERION_REGISTRY[name] = cls
         CRITERION_CLASS_NAMES.add(cls.__name__)
@@ -63,8 +61,9 @@ criterions_dir = os.path.dirname(__file__)
 for file in os.listdir(criterions_dir):
     path = os.path.join(criterions_dir, file)
     if (
-        not file.startswith("_") and not file.startswith(".")
+        not file.startswith("_")
+        and not file.startswith(".")
         and (file.endswith(".py") or os.path.isdir(path))
     ):
-        criter_name = file[:file.find(".py")] if file.endswith(".py") else file
+        criter_name = file[: file.find(".py")] if file.endswith(".py") else file
         module = importlib.import_module("liteasr.criterions." + criter_name)

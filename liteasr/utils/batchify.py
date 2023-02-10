@@ -149,8 +149,8 @@ class FrameBatch(BatchifyPolicy):
             return True
         # inout full
         elif (
-            self.dataset_cfg.max_frame_inout and
-            (max_ilen + max_olen) * exp_size > self.dataset_cfg.max_frame_inout
+            self.dataset_cfg.max_frame_inout
+            and (max_ilen + max_olen) * exp_size > self.dataset_cfg.max_frame_inout
         ):
             return True
         else:

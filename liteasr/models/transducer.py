@@ -23,7 +23,6 @@ from liteasr.utils.mask import padding_mask
 
 
 class Hypothesis(object):
-
     def __init__(
         self,
         score: float,
@@ -81,7 +80,6 @@ class TransducerConfig(LiteasrDataclass):
 
 @register_model("transducer", dataclass=TransducerConfig)
 class Transducer(LiteasrModel):
-
     def __init__(self, cfg: TransducerConfig, task=None):
         super().__init__()
 
@@ -158,10 +156,7 @@ class Transducer(LiteasrModel):
                     y, state_h, state_c = cache[hyp_max.str_yseq]
                 else:
                     token = torch.full(
-                        (1, 1),
-                        hyp_max.yseq[-1],
-                        dtype=torch.long,
-                        device=h.device
+                        (1, 1), hyp_max.yseq[-1], dtype=torch.long, device=h.device
                     )
                     token_embed = self.decoder.embed(token)
                     y, state_h, state_c = self.decoder.rnn_forward(
@@ -205,9 +200,9 @@ class Transducer(LiteasrModel):
                 if len(kept_hyps) >= 10:
                     break
 
-        best_hyp = sorted(
-            kept_hyps, key=lambda x: x.score / len(x.yseq), reverse=True
-        )[0]
+        best_hyp = sorted(kept_hyps, key=lambda x: x.score / len(x.yseq), reverse=True)[
+            0
+        ]
         return best_hyp.yseq
 
     def get_pred_len(self, xlens):

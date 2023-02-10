@@ -35,7 +35,7 @@ def is_master():
 
 def is_subworld_master(cfg: DistributedConfig):
     if dist.is_initialized():
-        return dist.get_rank() == sum(cfg.world_piece_size[:cfg.machine_rank])
+        return dist.get_rank() == sum(cfg.world_piece_size[: cfg.machine_rank])
     else:
         return True
 
@@ -48,9 +48,7 @@ def barrier():
 def check_distributed_config(cfg: DistributedConfig):
     device_count = torch.cuda.device_count()
     if cfg.world_size > device_count:
-        logger.warning(
-            f"world_size changed from {cfg.world_size} -> {device_count}"
-        )
+        logger.warning(f"world_size changed from {cfg.world_size} -> {device_count}")
         cfg.world_size = device_count
 
 
@@ -99,16 +97,14 @@ def switch_logger_level():
 
 def distributed_func(rank, func, cfg: LiteasrConfig):
     # set root logger config
-    logging.config.dictConfig(
-        OmegaConf.to_container(cfg.job_logging_cfg, resolve=True)
-    )
+    logging.config.dictConfig(OmegaConf.to_container(cfg.job_logging_cfg, resolve=True))
 
     cfg.distributed.device_id = rank
     torch.cuda.set_device(cfg.distributed.device_id)
 
-    cfg.distributed.rank = sum(
-        cfg.distributed.world_piece_size[:cfg.distributed.machine_rank]
-    ) + rank
+    cfg.distributed.rank = (
+        sum(cfg.distributed.world_piece_size[: cfg.distributed.machine_rank]) + rank
+    )
 
     distributed_init(cfg)
 
@@ -135,8 +131,6 @@ def call_func(func, cfg: LiteasrConfig):
         mp.spawn(
             fn=distributed_func,
             args=(func, cfg),
-            nprocs=(
-                cfg.distributed.world_piece_size[cfg.distributed.machine_rank]
-            ),
+            nprocs=(cfg.distributed.world_piece_size[cfg.distributed.machine_rank]),
             join=True,
         )

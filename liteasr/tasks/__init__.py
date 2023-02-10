@@ -24,7 +24,6 @@ TASK_CLASS_NAMES = set()
 
 
 class LiteasrTask(object):
-
     def __init__(self, cfg):
         self.cfg = cfg
         self.datasets = dict()
@@ -61,11 +60,11 @@ class LiteasrTask(object):
         return criterion
 
     def __repr__(self):
-        format_string = self.__class__.__name__ + ' ('
+        format_string = self.__class__.__name__ + " ("
         for key in sorted(self.__dict__.keys()):
-            format_string += '\n'
-            format_string += '  ' + key + ': ' + str(self.__dict__[key])
-        format_string += '\n)'
+            format_string += "\n"
+            format_string += "  " + key + ": " + str(self.__dict__[key])
+        format_string += "\n)"
         return format_string
 
 
@@ -76,7 +75,6 @@ def setup_task(cfg: LiteasrDataclass) -> LiteasrTask:
 
 
 def register_task(name, dataclass=None):
-
     def register_task_cls(cls):
         TASK_REGISTRY[name] = cls
         TASK_CLASS_NAMES.add(cls.__name__)
@@ -99,8 +97,9 @@ tasks_dir = os.path.dirname(__file__)
 for file in os.listdir(tasks_dir):
     path = os.path.join(tasks_dir, file)
     if (
-        not file.startswith("_") and not file.startswith(".")
+        not file.startswith("_")
+        and not file.startswith(".")
         and (file.endswith(".py") or os.path.isdir(path))
     ):
-        task_name = file[:file.find(".py")] if file.endswith(".py") else file
+        task_name = file[: file.find(".py")] if file.endswith(".py") else file
         module = importlib.import_module("liteasr.tasks." + task_name)

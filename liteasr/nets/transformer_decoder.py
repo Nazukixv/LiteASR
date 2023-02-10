@@ -11,7 +11,6 @@ from liteasr.nets.transformer_layer import LayerNorm
 
 
 class TransformerDecoder(nn.Module):
-
     def __init__(
         self,
         i_dim: int,
@@ -49,7 +48,8 @@ class TransformerDecoder(nn.Module):
                         dropout_rate=ff_dropout_rate,
                     ),
                     dropout_rate=dropout_rate,
-                ) for _ in range(n_layer)
+                )
+                for _ in range(n_layer)
             ]
         )
         self.after_norm = LayerNorm(h_dim)

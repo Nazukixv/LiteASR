@@ -8,7 +8,6 @@ import torch.nn as nn
 
 
 class RNNDecoder(nn.Module):
-
     def __init__(
         self,
         i_dim: int,
@@ -51,8 +50,7 @@ class RNNDecoder(nn.Module):
     ) -> Tuple[Tensor, List[Tensor], List[Tensor]]:
         hj, cj = [], []
         h = hi[0]  # initialization just to pass TorchScript check
-        for n, (layer,
-                dropout) in enumerate(zip(self.dec_layers, self.dropout_dec)):
+        for n, (layer, dropout) in enumerate(zip(self.dec_layers, self.dropout_dec)):
             if n == 0:
                 h, c = layer(yi, (hi[n], ci[n]))
                 hj.append(h)

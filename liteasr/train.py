@@ -26,12 +26,8 @@ def main(cfg: LiteasrConfig) -> None:
         cfg.job_logging_cfg = OmegaConf.to_container(
             HydraConfig.get().job_logging, resolve=True
         )
-        cfg.run_cfg = OmegaConf.to_container(
-            HydraConfig.get().run, resolve=True
-        )
-    cfg = OmegaConf.create(
-        OmegaConf.to_container(cfg, resolve=True, enum_to_str=True)
-    )
+        cfg.run_cfg = OmegaConf.to_container(HydraConfig.get().run, resolve=True)
+    cfg = OmegaConf.create(OmegaConf.to_container(cfg, resolve=True, enum_to_str=True))
     # OmegaConf.set_struct(cfg, True)
 
     dist_util.call_func(train, cfg)
@@ -71,9 +67,8 @@ def train(cfg: LiteasrConfig):
         # basically the maximum possible number of prior processes
         # is that of machines
         for rank in range(dist_util.get_world_size()):
-            if (
-                dist_util.get_rank() == rank
-                and dist_util.is_subworld_master(cfg.distributed)
+            if dist_util.get_rank() == rank and dist_util.is_subworld_master(
+                cfg.distributed
             ):
                 task.load_dataset(
                     "train",

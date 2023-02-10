@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 
 
 class RawAudioFileDataset(LiteasrDataset):
-
     def __init__(
         self,
         data_cfg: str,
@@ -42,8 +41,7 @@ class RawAudioFileDataset(LiteasrDataset):
     def batchify(self, dataset_cfg: DatasetConfig):
         self.batchify_policy = Wav2VecBatch(dataset_cfg)
         indices, _ = zip(
-            *
-            sorted(enumerate(self.data), key=lambda d: d[1].xlen, reverse=True)
+            *sorted(enumerate(self.data), key=lambda d: d[1].xlen, reverse=True)
         )
         self.batchify_policy.batchify(indices, self.data)
 

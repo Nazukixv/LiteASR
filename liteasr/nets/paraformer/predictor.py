@@ -10,7 +10,6 @@ from liteasr.utils.mask import padding_mask
 
 
 class Predictor(nn.Module):
-
     def __init__(self, size: int):
         super().__init__()
         self.conv = nn.Conv1d(
@@ -111,9 +110,9 @@ class Predictor(nn.Module):
                     fired_state[b][fired_marks[b, :] == 1],
                     fired_state[b][fired_marks[b, :] == 0],
                 ],
-                dim=0
+                dim=0,
             ).unsqueeze(0)
             cif_output = torch.cat([cif_output, rearanged_fired_state], dim=0)
-        h_cif = cif_output[:, :max(ulens), :]
+        h_cif = cif_output[:, : max(ulens), :]
 
         return h_cif, sum_alpha

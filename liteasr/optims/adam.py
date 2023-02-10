@@ -22,7 +22,6 @@ class AdamConfig(LiteasrDataclass):
 
 @register_optimzer("adam", dataclass=AdamConfig)
 class Adam(LiteasrOptimizer):
-
     def __init__(self, params, cfg: AdamConfig, task=None):
         super().__init__(cfg)
         self._optimizer = torch.optim.Adam(

@@ -11,7 +11,6 @@ TRANS_REGISTRY = {}
 
 
 def register_transformation(name):
-
     def register_transformation_cls(cls):
         TRANS_REGISTRY[name] = cls
         return cls
@@ -24,18 +23,16 @@ trans_dir = os.path.dirname(__file__)
 for file in os.listdir(trans_dir):
     path = os.path.join(trans_dir, file)
     if (
-        not file.startswith("_") and not file.startswith(".")
+        not file.startswith("_")
+        and not file.startswith(".")
         and (file.endswith(".py") or os.path.isdir(path))
         and not file.endswith("deprecated.py")
     ):
-        trans_name = file[:file.find(".py")] if file.endswith(".py") else file
-        module = importlib.import_module(
-            "liteasr.utils.transform." + trans_name
-        )
+        trans_name = file[: file.find(".py")] if file.endswith(".py") else file
+        module = importlib.import_module("liteasr.utils.transform." + trans_name)
 
 
 class PostProcess(object):
-
     def __init__(self, cfg: PostProcessConfig):
         self.workflow = []
         for name in cfg.workflow:

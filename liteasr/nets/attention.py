@@ -6,7 +6,6 @@ import torch.nn as nn
 
 
 class MultiHeadAttention(nn.Module):
-
     def __init__(
         self,
         n_head: int,
@@ -100,15 +99,16 @@ class RelativeMultiHeadAttention(MultiHeadAttention):
     def rel_shift(self, x, zero_triu: bool = False) -> Tensor:
         """Compute relative positinal encoding."""
 
-        zero_pad = torch.zeros(
-            (x.size()[:3] + (1,)), device=x.device, dtype=x.dtype
-        )
+        zero_pad = torch.zeros((x.size()[:3] + (1,)), device=x.device, dtype=x.dtype)
         x_padded = torch.cat([zero_pad, x], dim=-1)
 
-        x_padded = x_padded.view(x.size()[:2] + (
-            x.size(3) + 1,
-            x.size(2),
-        ))
+        x_padded = x_padded.view(
+            x.size()[:2]
+            + (
+                x.size(3) + 1,
+                x.size(2),
+            )
+        )
         x = x_padded[:, :, 1:].view_as(x)
 
         if zero_triu:
@@ -149,8 +149,6 @@ class RelativeMultiHeadAttention(MultiHeadAttention):
         matrix_bd = torch.matmul(q_with_bias_v, p.transpose(-2, -1))
         matrix_bd = self.rel_shift(matrix_bd)
 
-        scores = (
-            matrix_ac + matrix_bd
-        ) * self.scaling  # (batch, head, time1, time2)
+        scores = (matrix_ac + matrix_bd) * self.scaling  # (batch, head, time1, time2)
 
         return self.apply_attention(scores, v, mask=mask)

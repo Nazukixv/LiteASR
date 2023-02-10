@@ -50,7 +50,7 @@ def load_ckpt(cfg: InferenceConfig):
         assert pos - cfg.avg_num + 1 >= 0
 
         if cfg.avg_policy is None:
-            pickup_ckpts = ckpts[pos - cfg.avg_num + 1:pos + 1]
+            pickup_ckpts = ckpts[pos - cfg.avg_num + 1 : pos + 1]
         else:
             loss = []
             with open(cfg.avg_policy, "r") as log:
@@ -61,9 +61,9 @@ def load_ckpt(cfg: InferenceConfig):
                         loss.append(float(match.group(1)))
 
             ckpt_loss = sorted(
-                zip(ckpts[:pos + 1], loss[:pos + 1]),
+                zip(ckpts[: pos + 1], loss[: pos + 1]),
                 key=lambda cl: cl[1],
-            )[:cfg.avg_num]
+            )[: cfg.avg_num]
             pickup_ckpts, _ = zip(*ckpt_loss)
 
         info = "\n\t".join(pickup_ckpts)

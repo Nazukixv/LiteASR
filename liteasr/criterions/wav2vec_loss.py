@@ -20,7 +20,6 @@ class Wav2Vec2LossConfig(LiteasrDataclass):
 
 @register_criterion("wav2vec", dataclass=Wav2Vec2LossConfig)
 class Wav2Vec2Loss(LiteasrLoss):
-
     def __init__(self, cfg: Wav2Vec2LossConfig, task=None):
         super().__init__(cfg)
         self._loss_contrastive = nn.CrossEntropyLoss()

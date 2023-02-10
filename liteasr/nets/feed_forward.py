@@ -2,7 +2,6 @@ import torch.nn as nn
 
 
 class PositionwiseFeedForward(nn.Module):
-
     def __init__(
         self,
         i_dim: int,

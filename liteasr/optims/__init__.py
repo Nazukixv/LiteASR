@@ -14,7 +14,6 @@ OPTIMIZER_CLASS_NAMES = set()
 
 
 class LiteasrOptimizer(object):
-
     def __init__(self, cfg):
         super().__init__()
         self.cfg = cfg
@@ -47,14 +46,14 @@ class LiteasrOptimizer(object):
         self.optimizer.zero_grad()
 
     def __repr__(self):
-        format_string = self.__class__.__name__ + ' ('
+        format_string = self.__class__.__name__ + " ("
         for i, group in enumerate(self.param_groups):
-            format_string += '\n'
-            format_string += 'Parameter Group {0}\n'.format(i)
+            format_string += "\n"
+            format_string += "Parameter Group {0}\n".format(i)
             for key in sorted(group.keys()):
-                if key != 'params':
-                    format_string += '    {0}: {1}\n'.format(key, group[key])
-        format_string += ')'
+                if key != "params":
+                    format_string += "    {0}: {1}\n".format(key, group[key])
+        format_string += ")"
         return format_string
 
 
@@ -72,7 +71,6 @@ def build_optimizer(params, cfg, task) -> LiteasrOptimizer:
 
 
 def register_optimzer(name, dataclass=None):
-
     def register_optimizer_cls(cls):
         OPTIMIZER_REGISTRY[name] = cls
         OPTIMIZER_CLASS_NAMES.add(cls.__name__)
@@ -95,8 +93,9 @@ optims_dir = os.path.dirname(__file__)
 for file in os.listdir(optims_dir):
     path = os.path.join(optims_dir, file)
     if (
-        not file.startswith("_") and not file.startswith(".")
+        not file.startswith("_")
+        and not file.startswith(".")
         and (file.endswith(".py") or os.path.isdir(path))
     ):
-        optim_name = file[:file.find(".py")] if file.endswith(".py") else file
+        optim_name = file[: file.find(".py")] if file.endswith(".py") else file
         module = importlib.import_module("liteasr.optims." + optim_name)

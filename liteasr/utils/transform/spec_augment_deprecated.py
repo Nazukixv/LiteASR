@@ -61,9 +61,7 @@ def time_warp(x, max_time_warp=80, inplace=False, mode="PIL"):
             return x
         # NOTE: randrange(a, b) emits a, a + 1, ..., b - 1
         center = random.randrange(window, t - window)
-        warped = random.randrange(
-            center - window, center + window
-        ) + 1  # 1 ... t - 1
+        warped = random.randrange(center - window, center + window) + 1  # 1 ... t - 1
 
         left = Image.fromarray(x[:center]).resize(
             (x.shape[1], warped),
@@ -86,7 +84,8 @@ def time_warp(x, max_time_warp=80, inplace=False, mode="PIL"):
         return spec_augment.time_warp(torch.from_numpy(x), window).numpy()
     else:
         raise NotImplementedError(
-            "unknown resize mode: " + mode
+            "unknown resize mode: "
+            + mode
             + ", choose one from (PIL, sparse_image_warp)."
         )
 

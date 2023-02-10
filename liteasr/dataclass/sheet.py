@@ -17,7 +17,6 @@ def _get_lineno(file_name: Optional[str]) -> int:
 
 
 class AudioSheet(object):
-
     def __init__(self, data_cfg):
         all_files = os.listdir(data_cfg)
 
@@ -30,8 +29,7 @@ class AudioSheet(object):
             self.lines = _get_lineno(self.scp)
         elif "wav.scp" in all_files:
             self.scp = f"{data_cfg}/wav.scp"
-            self.segments = f"{data_cfg}/segments" \
-                if "segments" in all_files else None
+            self.segments = f"{data_cfg}/segments" if "segments" in all_files else None
             self.lines = max(_get_lineno(self.scp), _get_lineno(self.segments))
         else:
             raise FileNotFoundError(f"wav.scp not found in {data_cfg}")
@@ -47,16 +45,14 @@ class AudioSheet(object):
                     shp_entry = shp_line.strip().split(None, 1)
                     if len(scp_entry) != 2 or len(shp_entry) != 2:
                         raise ValueError(
-                            "Invalid line found:\n"
-                            f">\t{scp_line}\n"
-                            f">\t{shp_line}"
+                            "Invalid line found:\n" f">\t{scp_line}\n" f">\t{shp_line}"
                         )
                     wavid, wavfd = scp_entry
                     wavid_, frames = shp_entry
                     assert wavid == wavid_
                     yield wavid, wavfd, None, int(frames)
         elif self.segments is not None:
-            with open(self.segments, 'r') as fseg, open(self.scp, 'r') as fscp:
+            with open(self.segments, "r") as fseg, open(self.scp, "r") as fscp:
                 fds = {}
                 while True:
                     line = fscp.readline()
@@ -98,14 +94,13 @@ class AudioSheet(object):
 
 
 class TextSheet(object):
-
     def __init__(self, data_cfg, vocab: Vocab):
         self.text = f"{data_cfg}/text"
         self.vocab = vocab
         self.lines = _get_lineno(self.text)
 
     def __iter__(self):
-        with open(self.text, 'r') as ftxt:
+        with open(self.text, "r") as ftxt:
             while True:
                 line = ftxt.readline()
                 if not line:

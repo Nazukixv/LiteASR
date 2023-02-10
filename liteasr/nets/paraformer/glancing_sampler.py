@@ -7,7 +7,6 @@ import torch.nn as nn
 
 
 class GlancingSampler(nn.Module):
-
     def __init__(self, sample_ratio: float):
         super().__init__()
         self.sample_ratio = sample_ratio

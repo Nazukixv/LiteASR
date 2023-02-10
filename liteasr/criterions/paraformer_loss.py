@@ -25,7 +25,6 @@ class ParaformerLossConfig(LiteasrDataclass):
 
 @register_criterion("paraformer_loss", dataclass=ParaformerLossConfig)
 class ParaformerLoss(LiteasrLoss):
-
     def __init__(self, cfg: ParaformerLossConfig, task=None):
         super().__init__(cfg)
         self._loss_ce = nn.CrossEntropyLoss(ignore_index=-1, reduction="mean")

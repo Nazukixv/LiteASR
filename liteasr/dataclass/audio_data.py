@@ -30,7 +30,7 @@ class Audio(object):
         else:  # pcm samples
             samples, _ = sf.read(self.fd)
             x = torch.from_numpy(samples).float()
-            x = x[self.start:self.start + self.xlen]
+            x = x[self.start : self.start + self.xlen]
         return x
 
     @property

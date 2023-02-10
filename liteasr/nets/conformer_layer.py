@@ -8,7 +8,6 @@ from liteasr.nets.transformer_layer import EncoderLayer as LegacyEncoderLayer
 
 
 class EncoderLayer(LegacyEncoderLayer):
-
     def __init__(
         self,
         size,
@@ -43,9 +42,7 @@ class EncoderLayer(LegacyEncoderLayer):
         x = residual + self.feed_forward_scale * self.dropout(
             self.feed_forward_macaron(x)
         )
-        x = self.feed_forward_macaron_norm(
-            x
-        ) if not self.normalize_before else x
+        x = self.feed_forward_macaron_norm(x) if not self.normalize_before else x
 
         return x
 
@@ -63,9 +60,7 @@ class EncoderLayer(LegacyEncoderLayer):
 
         residual = x
         x = self.feed_forward_norm(x) if self.normalize_before else x
-        x = residual + self.feed_forward_scale * self.dropout(
-            self.feed_forward(x)
-        )
+        x = residual + self.feed_forward_scale * self.dropout(self.feed_forward(x))
         x = self.feed_forward_norm(x) if not self.normalize_before else x
 
         return x
@@ -87,7 +82,6 @@ class EncoderLayer(LegacyEncoderLayer):
 
 
 class RelativeEncoderLayer(EncoderLayer):
-
     def __init__(
         self,
         size,

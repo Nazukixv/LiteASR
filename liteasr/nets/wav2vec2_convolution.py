@@ -7,7 +7,6 @@ from liteasr.nets.layer_norm import Fp32LayerNorm
 
 
 class ConvolutionBlock(nn.Module):
-
     def __init__(
         self,
         n_in: int,
@@ -34,7 +33,6 @@ class ConvolutionBlock(nn.Module):
 
 
 class Convolution(nn.Module):
-
     def __init__(
         self,
         conv_layers: List[Tuple[int, int, int]],

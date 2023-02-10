@@ -26,7 +26,6 @@ class HybridCTCLossConfig(LiteasrDataclass):
 
 @register_criterion("hybrid_ctc", dataclass=HybridCTCLossConfig)
 class HybridCTCLoss(LiteasrLoss):
-
     def __init__(self, cfg: HybridCTCLossConfig, task=None):
         super().__init__(cfg)
         self._loss_attn = nn.KLDivLoss(reduction="none")
@@ -76,10 +75,7 @@ class HybridCTCLoss(LiteasrLoss):
         loss_ctc = loss_ctc / ys.size(0)
 
         # hybrid loss
-        loss = (
-            self.cfg.ctc_weight * loss_ctc +
-            (1 - self.cfg.ctc_weight) * loss_attn
-        )
+        loss = self.cfg.ctc_weight * loss_ctc + (1 - self.cfg.ctc_weight) * loss_attn
         return loss
 
     def _check_pred(self, h_attn, h_ctc):

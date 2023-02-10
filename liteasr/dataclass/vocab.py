@@ -29,41 +29,39 @@ class Vocab(object):
 
         """
 
-        self.token2id = {'<blank>': 0}
-        self.id2token = ['<blank>']
-        with open(vocab_path, 'r') as vocab:
+        self.token2id = {"<blank>": 0}
+        self.id2token = ["<blank>"]
+        with open(vocab_path, "r") as vocab:
             for line in vocab.readlines():
                 entry = line.strip().split()
                 if len(entry) != 2:
-                    raise ValueError(f'Invalid line is found:\n>    {line}')
+                    raise ValueError(f"Invalid line is found:\n>    {line}")
                 token, tokenid = entry
                 tokenid = int(tokenid)
                 if tokenid != len(self.id2token):
-                    raise ValueError(f'Missing token id: {len(self.id2token)}')
+                    raise ValueError(f"Missing token id: {len(self.id2token)}")
                 self.token2id[token] = tokenid
                 self.id2token.append(token)
-        self.token2id['<sos/eos>'] = len(self.id2token)
-        self.id2token.append('<sos/eos>')
+        self.token2id["<sos/eos>"] = len(self.id2token)
+        self.id2token.append("<sos/eos>")
 
     @property
     def valid(self) -> bool:
-        return all(
-            [self.id2token[self.token2id[t]] == t for t in self.token2id]
-        )
+        return all([self.id2token[self.token2id[t]] == t for t in self.token2id])
 
     def __getitem__(self, index):
         if isinstance(index, str):
             if index in self.token2id:
                 return self.token2id[index]
             else:
-                return self.token2id['<unk>']
+                return self.token2id["<unk>"]
         elif isinstance(index, int):
             if index < len(self.id2token):
                 return self.id2token[index]
             else:
-                raise IndexError('Index out of range of vocabulary')
+                raise IndexError("Index out of range of vocabulary")
         else:
-            raise KeyError(f'Key {index} is not valid')
+            raise KeyError(f"Key {index} is not valid")
 
     def convert(self, index):
         assert isinstance(index, int)

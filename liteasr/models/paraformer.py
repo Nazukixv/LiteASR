@@ -64,7 +64,6 @@ class ParaformerConfig(LiteasrDataclass):
 
 @register_model("Paraformer", dataclass=ParaformerConfig)
 class Paraformer(LiteasrModel):
-
     def __init__(self, cfg: ParaformerConfig, task=None):
         super().__init__()
 

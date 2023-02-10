@@ -10,22 +10,22 @@ from liteasr.nets.attention import MultiHeadAttention
 from liteasr.nets.attention import RelativeMultiHeadAttention
 from liteasr.nets.conformer_convolution import Convolution
 from liteasr.nets.conformer_layer import EncoderLayer as ConformerEncoderLayer
-from liteasr.nets.conformer_layer import \
-    RelativeEncoderLayer as RelativeConformerEncoderLayer
+from liteasr.nets.conformer_layer import (
+    RelativeEncoderLayer as RelativeConformerEncoderLayer,
+)
 from liteasr.nets.feed_forward import PositionwiseFeedForward
 from liteasr.nets.positional_encoding import PositionalEncoding
 from liteasr.nets.positional_encoding import RelativePositionalEncoding
 from liteasr.nets.subsampling import Conv2DLayer
 from liteasr.nets.swish import Swish
-from liteasr.nets.transformer_layer import \
-    EncoderLayer as TransformerEncoderLayer
+from liteasr.nets.transformer_layer import EncoderLayer as TransformerEncoderLayer
 from liteasr.nets.transformer_layer import LayerNorm
-from liteasr.nets.transformer_layer import \
-    RelativeEncoderLayer as RelativeTransformerEncoderLayer
+from liteasr.nets.transformer_layer import (
+    RelativeEncoderLayer as RelativeTransformerEncoderLayer,
+)
 
 
 class TransformerEncoder(nn.Module):
-
     def __init__(
         self,
         use_rel: bool,
@@ -51,8 +51,7 @@ class TransformerEncoder(nn.Module):
 
         if arch == "transformer":
             tfm_layer = (
-                RelativeTransformerEncoderLayer
-                if use_rel else TransformerEncoderLayer
+                RelativeTransformerEncoderLayer if use_rel else TransformerEncoderLayer
             )
             self.enc_layers = nn.ModuleList(
                 [
@@ -65,13 +64,13 @@ class TransformerEncoder(nn.Module):
                             dropout_rate=ff_dropout_rate,
                         ),
                         dropout_rate=dropout_rate,
-                    ) for _ in range(n_layer)
+                    )
+                    for _ in range(n_layer)
                 ]
             )
         elif arch == "conformer":
             cfm_layer = (
-                RelativeConformerEncoderLayer
-                if use_rel else ConformerEncoderLayer
+                RelativeConformerEncoderLayer if use_rel else ConformerEncoderLayer
             )
 
             if activation == "relu":
@@ -98,7 +97,8 @@ class TransformerEncoder(nn.Module):
                         ),
                         conv=Convolution(h_dim, 15, activation=activation_f),
                         dropout_rate=dropout_rate,
-                    ) for _ in range(n_layer)
+                    )
+                    for _ in range(n_layer)
                 ]
             )
 
@@ -128,7 +128,6 @@ class TransformerEncoder(nn.Module):
 
 
 class Wav2Vec2TansformerEncoder(nn.Module):
-
     def __init__(
         self,
         i_dim: int,
@@ -168,7 +167,8 @@ class Wav2Vec2TansformerEncoder(nn.Module):
                         dropout_rate=ff_dropout_rate,
                     ),
                     dropout_rate=dropout_rate,
-                ) for _ in range(n_layer)
+                )
+                for _ in range(n_layer)
             ]
         )
 

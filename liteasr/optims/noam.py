@@ -19,7 +19,6 @@ class NoamConfig(AdamConfig):
 
 @register_optimzer("noam", dataclass=NoamConfig)
 class Noam(Adam):
-
     def __init__(self, params, cfg: NoamConfig, task=None):
         super().__init__(params, cfg, task)
         self.model_dim = cfg.model_dim
@@ -35,14 +34,15 @@ class Noam(Adam):
         self._step += 1
         rate = self.rate()
         for p in self.param_groups:
-            p['lr'] = rate
+            p["lr"] = rate
         self._rate = rate
         self.optimizer.step()
 
     def rate(self):
         return (
-            self.factor * self.model_dim**(-0.5)
-            * min(self._step**(-0.5), self._step * self.warmup**(-1.5))
+            self.factor
+            * self.model_dim ** (-0.5)
+            * min(self._step ** (-0.5), self._step * self.warmup ** (-1.5))
         )
 
     @classmethod

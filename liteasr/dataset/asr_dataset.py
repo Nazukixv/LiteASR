@@ -21,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 
 class AudioFileDataset(LiteasrDataset):
-
     def __init__(
         self,
         split: str,
@@ -90,13 +89,12 @@ class AudioFileDataset(LiteasrDataset):
             self.dump_path.mkdir(parents=True)
             for i, batch_indices in enumerate(self.batchify_policy):
                 prefix, infix, suffix = dec2hex(i)
-                (self.dump_path / prefix / infix).mkdir(
-                    parents=True, exist_ok=True
-                )
+                (self.dump_path / prefix / infix).mkdir(parents=True, exist_ok=True)
                 pickle.dump(
                     [self.data[idx] for idx in batch_indices],
-                    file=(self.dump_path / prefix / infix
-                          / f"{suffix}.batch").open("wb"),
+                    file=(self.dump_path / prefix / infix / f"{suffix}.batch").open(
+                        "wb"
+                    ),
                 )
 
         # release memory
@@ -115,8 +113,7 @@ class AudioFileDataset(LiteasrDataset):
 
         self.batchify_policy = BatchifyPolicy(dataset_cfg)
         indices, _ = zip(
-            *
-            sorted(enumerate(self.data), key=lambda d: d[1].xlen, reverse=True)
+            *sorted(enumerate(self.data), key=lambda d: d[1].xlen, reverse=True)
         )
         self.batchify_policy.batchify(indices, self.data)
 
@@ -149,8 +146,7 @@ class AudioFileDataset(LiteasrDataset):
         else:
             prefix, infix, suffix = dec2hex(index)
             return pickle.load(
-                file=(self.dump_path / prefix / infix
-                      / f"{suffix}.batch").open("rb")
+                file=(self.dump_path / prefix / infix / f"{suffix}.batch").open("rb")
             )
 
     def __len__(self):
@@ -163,7 +159,5 @@ class AudioFileDataset(LiteasrDataset):
             count = 0
             for suffix in self.dump_path.iterdir():
                 for infix in (self.dump_path / suffix).iterdir():
-                    count += len(
-                        list((self.dump_path / suffix / infix).iterdir())
-                    )
+                    count += len(list((self.dump_path / suffix / infix).iterdir()))
             return count

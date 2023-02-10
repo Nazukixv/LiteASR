@@ -191,10 +191,8 @@ def span_mask(
             min_span_size = min(spans)
             for size in sorted(spans, reverse=True):
                 se_lens = np.fromiter(
-                    (
-                        e - s if e - s >= size + min_interval else 0
-                        for s, e in se_pairs
-                    ), int
+                    (e - s if e - s >= size + min_interval else 0 for s, e in se_pairs),
+                    int,
                 )
                 l_sum = np.sum(se_lens)
                 if l_sum == 0:
@@ -210,9 +208,7 @@ def span_mask(
             if frame - min_span_size <= mask_num:
                 min_span_size = frame - mask_num - 1
 
-            mask_idc = np.random.choice(
-                frame - min_span_size, mask_num, replace=False
-            )
+            mask_idc = np.random.choice(frame - min_span_size, mask_num, replace=False)
 
             mask_idc = np.asarray(
                 [

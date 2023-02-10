@@ -4,7 +4,6 @@ from torch.utils.data.dataloader import DataLoader
 
 
 class EpochDataLoader(object):
-
     def __init__(self, **kwargs):
         self.data_loader = DataLoader(**kwargs)
         self.epoch = 0

@@ -22,15 +22,16 @@ class RNNTLossConfig(LiteasrDataclass):
 
 @register_criterion("rnnt", dataclass=RNNTLossConfig)
 class RNNTLoss(LiteasrLoss):
-
     def __init__(self, cfg: RNNTLossConfig, task=None):
         super().__init__(cfg)
         if cfg.trans_type == "warp-transducer":
             from warprnnt_pytorch import RNNTLoss
+
             self._loss = RNNTLoss(blank=cfg.blank_id)
         elif cfg.trans_type == "warp-rnnt":
             if cuda.is_available():
                 from warp_rnnt import rnnt_loss
+
                 self._loss = rnnt_loss
         else:
             raise NotImplementedError

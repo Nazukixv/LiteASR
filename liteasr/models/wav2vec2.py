@@ -56,20 +56,16 @@ class Wav2Vec2Config(LiteasrDataclass):
 
     # dropouts
     dropout: float = field(
-        default=0.1,
-        metadata={"help": "dropout probability for the transformer"}
+        default=0.1, metadata={"help": "dropout probability for the transformer"}
     )
     attention_dropout: float = field(
-        default=0.1,
-        metadata={"help": "dropout probability for attention weights"}
+        default=0.1, metadata={"help": "dropout probability for attention weights"}
     )
     activation_dropout: float = field(
-        default=0.0,
-        metadata={"help": "dropout probability after activation in FFN"}
+        default=0.0, metadata={"help": "dropout probability after activation in FFN"}
     )
     encoder_layerdrop: float = field(
-        default=0.0,
-        metadata={"help": "probability of dropping a tarnsformer layer"}
+        default=0.0, metadata={"help": "probability of dropping a tarnsformer layer"}
     )
     dropout_input: float = field(
         default=0.0,
@@ -83,21 +79,18 @@ class Wav2Vec2Config(LiteasrDataclass):
     final_dim: int = field(
         default=0,
         metadata={
-            "help":
-                "project final representations and targets to this many dimensions."
-                "set to encoder_embed_dim is <= 0"
+            "help": "project final representations and targets to this many dimensions."
+            "set to encoder_embed_dim is <= 0"
         },
     )
     layer_norm_first: bool = field(
-        default=False,
-        metadata={"help": "apply layernorm first in the transformer"}
+        default=False, metadata={"help": "apply layernorm first in the transformer"}
     )
     conv_feature_layers: str = field(
         default="[(512, 10, 5)] + [(512, 3, 2)] * 4 + [(512,2,2)] + [(512,2,2)]",
         metadata={
-            "help":
-                "string describing convolutional feature extraction layers in form of a python list that contains "
-                "[(dim, kernel_size, stride), ...]"
+            "help": "string describing convolutional feature extraction layers in form of a python list that contains "
+            "[(dim, kernel_size, stride), ...]"
         },
     )
     conv_bias: bool = field(
@@ -113,42 +106,34 @@ class Wav2Vec2Config(LiteasrDataclass):
         default=False, metadata={"help": "use quantized inputs"}
     )
     same_quantizer: bool = field(
-        default=False,
-        metadata={"help": "use same quantizer for inputs and targets"}
+        default=False, metadata={"help": "use same quantizer for inputs and targets"}
     )
     target_glu: bool = field(
         default=False, metadata={"help": "adds projection + glu to targets"}
     )
     feature_grad_mult: float = field(
-        default=1.0,
-        metadata={"help": "multiply feature extractor var grads by this"}
+        default=1.0, metadata={"help": "multiply feature extractor var grads by this"}
     )
     latent_vars: int = field(
         default=320,
-        metadata={
-            "help": "number of latent variables V in each group of the codebook"
-        },
+        metadata={"help": "number of latent variables V in each group of the codebook"},
     )
     latent_groups: int = field(
         default=2,
-        metadata={
-            "help": "number of groups G of latent variables in the codebook"
-        },
+        metadata={"help": "number of groups G of latent variables in the codebook"},
     )
     latent_dim: int = field(
         default=0,
         metadata={
-            "help":
-                "if > 0, uses this dimensionality for latent variables. "
-                "otherwise uses final_dim / latent_groups"
+            "help": "if > 0, uses this dimensionality for latent variables. "
+            "otherwise uses final_dim / latent_groups"
         },
     )
 
     # masking
     mask_length: int = field(default=10, metadata={"help": "mask length"})
     mask_prob: float = field(
-        default=0.65,
-        metadata={"help": "probability of replacing a token with mask"}
+        default=0.65, metadata={"help": "probability of replacing a token with mask"}
     )
     # mask_selection: MASKING_DISTRIBUTION_CHOICES = field(
     #     default="static", metadata={"help": "how to choose mask length"}
@@ -156,9 +141,8 @@ class Wav2Vec2Config(LiteasrDataclass):
     mask_other: float = field(
         default=0,
         metadata={
-            "help":
-                "secondary mask argument (used for more complex distributions), "
-                "see help in compute_mask_indices"
+            "help": "secondary mask argument (used for more complex distributions), "
+            "see help in compute_mask_indices"
         },
     )
     no_mask_overlap: bool = field(
@@ -171,12 +155,10 @@ class Wav2Vec2Config(LiteasrDataclass):
 
     # channel masking
     mask_channel_length: int = field(
-        default=10,
-        metadata={"help": "length of the mask for features (channels)"}
+        default=10, metadata={"help": "length of the mask for features (channels)"}
     )
     mask_channel_prob: float = field(
-        default=0.0,
-        metadata={"help": "probability of replacing a feature with 0"}
+        default=0.0, metadata={"help": "probability of replacing a feature with 0"}
     )
     # mask_channel_selection: MASKING_DISTRIBUTION_CHOICES = field(
     #     default="static",
@@ -185,14 +167,12 @@ class Wav2Vec2Config(LiteasrDataclass):
     mask_channel_other: float = field(
         default=0,
         metadata={
-            "help":
-                "secondary mask argument (used for more complex distributions), "
-                "see help in compute_mask_indicesh"
+            "help": "secondary mask argument (used for more complex distributions), "
+            "see help in compute_mask_indicesh"
         },
     )
     no_mask_channel_overlap: bool = field(
-        default=False,
-        metadata={"help": "whether to allow channel masks to overlap"}
+        default=False, metadata={"help": "whether to allow channel masks to overlap"}
     )
     mask_channel_min_space: int = field(
         default=1,
@@ -206,13 +186,10 @@ class Wav2Vec2Config(LiteasrDataclass):
     )
     negatives_from_everywhere: bool = field(
         default=False,
-        metadata={
-            "help": "sample negatives from everywhere, not just masked states"
-        },
+        metadata={"help": "sample negatives from everywhere, not just masked states"},
     )
     cross_sample_negatives: int = field(
-        default=0,
-        metadata={"help": "number of negative examples from the any sample"}
+        default=0, metadata={"help": "number of negative examples from the any sample"}
     )
     codebook_negatives: int = field(
         default=0, metadata={"help": "number of negative examples codebook"}
@@ -221,30 +198,24 @@ class Wav2Vec2Config(LiteasrDataclass):
     # positional embeddings
     conv_pos: int = field(
         default=128,
-        metadata={
-            "help": "number of filters for convolutional positional embeddings"
-        },
+        metadata={"help": "number of filters for convolutional positional embeddings"},
     )
     conv_pos_groups: int = field(
         default=16,
-        metadata={
-            "help": "number of groups for convolutional positional embedding"
-        },
+        metadata={"help": "number of groups for convolutional positional embedding"},
     )
 
     latent_temp: Tuple[float, float, float] = field(
         default=(2, 0.5, 0.999995),
         metadata={
-            "help":
-                "temperature for latent variable sampling. "
-                "can be tuple of 3 values (start, end, decay)"
+            "help": "temperature for latent variable sampling. "
+            "can be tuple of 3 values (start, end, decay)"
         },
     )
 
 
 @register_model("wav2vec2", dataclass=Wav2Vec2Config)
 class Wav2Vec2(LiteasrModel):
-
     def __init__(self, cfg: Wav2Vec2Config, task=None):
         super().__init__()
         self.cfg = cfg
@@ -258,7 +229,8 @@ class Wav2Vec2(LiteasrModel):
         )
         self.linear_input = (
             nn.Linear(self.embed, cfg.encoder_embed_dim)
-            if self.embed != cfg.encoder_embed_dim else None
+            if self.embed != cfg.encoder_embed_dim
+            else None
         )
         self.dropout_input = nn.Dropout(cfg.dropout_input)
         self.dropout_features = nn.Dropout(cfg.dropout_features)
@@ -367,9 +339,10 @@ class Wav2Vec2(LiteasrModel):
 
         with torch.no_grad():
             idx = (
-                buffered_arange(num_mask).unsqueeze(-1).expand(
-                    -1, self.cfg.num_negatives
-                ).flatten()
+                buffered_arange(num_mask)
+                .unsqueeze(-1)
+                .expand(-1, self.cfg.num_negatives)
+                .flatten()
             )
 
             negative_indices = torch.randint(
@@ -394,9 +367,7 @@ class Wav2Vec2(LiteasrModel):
         pos = pos.unsqueeze(0)  # (1, B, M, D)
         tgt = torch.cat([pos, negs], dim=0)  # (N+1, B, M, D)
 
-        logits = torch.cosine_similarity(
-            x.float(), tgt.float(), dim=-1
-        ).type_as(x)
+        logits = torch.cosine_similarity(x.float(), tgt.float(), dim=-1).type_as(x)
         logits = logits / self.cfg.logit_temp  # (N+1, B, M)
 
         neg_is_pos = (negs == pos).all(-1)  # (N, B, M)

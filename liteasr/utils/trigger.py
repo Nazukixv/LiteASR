@@ -26,7 +26,6 @@ class Trigger(object):
             return False
 
     def __call__(self, event):
-
         @wraps(event)
         def wrapper(trainer, unit):
             if self.is_triggered(trainer, unit):

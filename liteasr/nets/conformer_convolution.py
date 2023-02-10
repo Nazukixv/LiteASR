@@ -2,7 +2,6 @@ import torch.nn as nn
 
 
 class Convolution(nn.Module):
-
     def __init__(
         self,
         channels: int,

@@ -69,7 +69,6 @@ class U2Config(LiteasrDataclass):
 
 @register_model("U2", dataclass=U2Config)
 class U2(LiteasrModel):
-
     def __init__(self, cfg: U2Config, task=None):
         super().__init__()
 
@@ -167,8 +166,9 @@ class U2(LiteasrModel):
         max_len = h.size(1)
         beam_size = 10
         h = h.repeat(beam_size, 1, 1)
-        hyps = torch.ones([beam_size, 1], dtype=torch.long,
-                          device=h.device).fill_(self.sos)
+        hyps = torch.ones([beam_size, 1], dtype=torch.long, device=h.device).fill_(
+            self.sos
+        )
         init_scores = [0.0] + [-float("inf")] * (beam_size - 1)
         scores = torch.tensor(init_scores, dtype=torch.float, device=h.device)
         scores = scores.unsqueeze(1)
@@ -190,9 +190,7 @@ class U2(LiteasrModel):
             )
 
             score_topk, index_topk = torch.topk(logp, beam_size)
-            score_topk[end_flag.squeeze()] = torch.tensor(
-                init_scores, device=h.device
-            )
+            score_topk[end_flag.squeeze()] = torch.tensor(init_scores, device=h.device)
             index_topk[end_flag.squeeze()] = self.eos
 
             scores = (scores + score_topk).view(-1, beam_size * beam_size)
@@ -225,10 +223,10 @@ class U2(LiteasrModel):
         beam_size = 10
         ctc_probs = self.ctc.log_softmax(h).squeeze(0)  # (frame, vocab)
 
-        cur_hyps = [(tuple(), (0.0, -float('inf')))]
+        cur_hyps = [(tuple(), (0.0, -float("inf")))]
 
         for logp in ctc_probs:
-            next_hyps = defaultdict(lambda: (-float('inf'), -float('inf')))
+            next_hyps = defaultdict(lambda: (-float("inf"), -float("inf")))
             score_topk, index_topk = torch.topk(logp, beam_size)
             for s in index_topk:
                 s = s.item()
@@ -256,9 +254,7 @@ class U2(LiteasrModel):
                         next_hyps[n_prefix] = (n_pb, n_pnb)
 
             next_hyps = sorted(
-                next_hyps.items(),
-                key=lambda x: log_add(list(x[1])),
-                reverse=True
+                next_hyps.items(), key=lambda x: log_add(list(x[1])), reverse=True
             )
             cur_hyps = next_hyps[:beam_size]
 
@@ -278,10 +274,7 @@ class U2(LiteasrModel):
 
         # padding hyps
         hyps_pad = pad_sequence(
-            [
-                torch.tensor(hyp[0], device=h.device, dtype=torch.long)
-                for hyp in hyps
-            ],
+            [torch.tensor(hyp[0], device=h.device, dtype=torch.long) for hyp in hyps],
             batch_first=True,
             padding_value=self.ignore,
         )
@@ -308,7 +301,7 @@ class U2(LiteasrModel):
         attn_score = torch.nn.functional.log_softmax(h_attn, dim=-1)
 
         # calculate hypothesis score
-        best_score = -float('inf')
+        best_score = -float("inf")
         best_index = 0
         for i, hyp in enumerate(hyps):
             score = 0.0
@@ -353,8 +346,9 @@ class U2(LiteasrModel):
         # ys_in
         ys_ = ys.masked_fill(ys == self.ignore, self.eos)
         sos = (
-            torch.ones(ys.size(0),
-                       1).fill_(self.sos).to(dtype=ys.dtype, device=ys.device)
+            torch.ones(ys.size(0), 1)
+            .fill_(self.sos)
+            .to(dtype=ys.dtype, device=ys.device)
         )
         ys_in = torch.cat([sos, ys_], dim=1)
 
@@ -374,8 +368,8 @@ def log_add(args: List[int]) -> float:
     """
     Stable log add
     """
-    if all(a == -float('inf') for a in args):
-        return -float('inf')
+    if all(a == -float("inf") for a in args):
+        return -float("inf")
     a_max = max(args)
     lsp = math.log(sum(math.exp(a - a_max) for a in args))
     return a_max + lsp
