@@ -67,6 +67,7 @@ class DistributedConfig(LiteasrDataclass):
     backend: str = field(default="NCCL")
     init_method: Optional[str] = field(default=None)
     device_id: int = field(default=0)
+    num_workers: int = field(default=4)
 
 
 @dataclass

@@ -57,7 +57,7 @@ class Trainer(object):
             batch_size=1,
             shuffle=(train_sampler is None),
             sampler=train_sampler,
-            num_workers=cfg.distributed.world_size,
+            num_workers=cfg.distributed.num_workers,
             collate_fn=train_set.collator,
         )
         self.valid_iter = DataLoader(
