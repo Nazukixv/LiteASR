@@ -1,5 +1,7 @@
 import logging
+import os
 import socket
+import sys
 
 from omegaconf import OmegaConf
 import torch
@@ -86,6 +88,7 @@ def distributed_init(cfg: LiteasrConfig):
     cfg.distributed.rank = torch.distributed.get_rank()
 
     if cfg.distributed.rank != 0:
+        sys.stdout = open(os.devnull, "w")
         logging.getLogger().setLevel(logging.WARNING)
 
 

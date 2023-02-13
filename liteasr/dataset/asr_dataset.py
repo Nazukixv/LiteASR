@@ -14,6 +14,7 @@ from liteasr.dataclass.sheet import TextSheet
 from liteasr.dataset.liteasr_dataset import LiteasrDataset
 from liteasr.utils.batchify import FrameBatch
 from liteasr.utils.batchify import SeqBatch
+from liteasr.utils.progress_bar import ProgressBar
 from liteasr.utils.transform import PostProcess
 from liteasr.utils.utils import dec2hex
 
@@ -46,25 +47,14 @@ class AudioFileDataset(LiteasrDataset):
         _ts = TextSheet(data_dir, vocab=vocab)
         assert len(_as) == len(_ts)
 
-        threshold = 1
-        logger.info("percentage of loaded data:")
+        pb = ProgressBar(total=len(_as), title="loaded data")
         for audio_info, text_info in zip(_as, _ts):
             uttid, fd, start, shape = audio_info
             uttid_t, tokenids, text = text_info
             assert uttid_t == uttid
             info = fd, start, shape, tokenids, text if keep_raw else None
             self.data.append(Audio(*info))
-
-            if len(self.data) / len(_as) >= threshold / 20:
-                logger.info(
-                    "[{:<20}] {:>4.0%} ({}/{})".format(
-                        "=" * (threshold - 1) + ">",
-                        threshold / 20,
-                        len(self.data),
-                        len(_as),
-                    )
-                )
-                threshold += 1
+            pb.update(len(self.data))
 
             # In `memory_save` mode, processes that are not prior
             # do not have to load whole dataset.They load first data
