@@ -94,9 +94,15 @@ class AudioSheet(object):
 
 
 class TextSheet(object):
-    def __init__(self, data_cfg, vocab: Vocab):
+    def __init__(
+        self,
+        data_cfg,
+        vocab: Vocab,
+        delimiter: Optional[str] = None,
+    ):
         self.text = f"{data_cfg}/text"
         self.vocab = vocab
+        self.delimiter = delimiter
         self.lines = _get_lineno(self.text)
 
     def __iter__(self):
@@ -105,10 +111,13 @@ class TextSheet(object):
                 line = ftxt.readline()
                 if not line:
                     break
-                entry = line.strip().split()
-                uttid, *tokens = entry
-                text = "".join(tokens)  # naive impl
-                yield uttid, self.vocab.lookup(text), text
+                uttid, text = line.strip().split(maxsplit=1)
+                tokens = text.split(self.delimiter)
+                if self.delimiter is None:
+                    tokenids = self.vocab.lookup(tokens[0])
+                else:
+                    tokenids = self.vocab.lookup(tokens)
+                yield uttid, tokenids, text
 
     def __len__(self):
         return self.lines
