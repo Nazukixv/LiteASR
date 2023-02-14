@@ -21,13 +21,6 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class DataConfig(object):
-    scp: str = field(default=MISSING)
-    segments: Optional[str] = None
-    text: str = field(default=MISSING)
-
-
-@dataclass
 class ASRConfig(LiteasrDataclass):
     vocab: str = field(default=MISSING)
     train: str = field(default=MISSING)
