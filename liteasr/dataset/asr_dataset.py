@@ -54,13 +54,14 @@ class AudioFileDataset(LiteasrDataset):
             assert uttid_t == uttid
             info = fd, start, shape, tokenids, text if keep_raw else None
             self.data.append(Audio(*info))
-            pb.update(len(self.data))
 
             # In `memory_save` mode, processes that are not prior
             # do not have to load whole dataset.They load first data
             # just to get `self.feat_dim`.
             if _is_other:
                 break
+
+            pb.update(len(self.data))
 
         self.feat_dim = self.data[0].x.shape[-1]
 
