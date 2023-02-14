@@ -26,6 +26,7 @@ class ASRConfig(LiteasrDataclass):
     train: str = field(default=MISSING)
     valid: str = field(default=MISSING)
     test: List[str] = field(default_factory=list)
+    delimiter: Optional[str] = field(default=None)
     save_dir: str = field(default="ckpts")
 
 
@@ -55,6 +56,7 @@ class ASRTask(LiteasrTask):
             self.datasets[split] = AudioFileDataset(
                 split=split,
                 data_dir=data_dir,
+                delimiter=self.cfg.delimiter,
                 dataset_cfg=dataset_cfg,
                 postprocess_cfg=postprocess_cfg,
                 vocab=self.vocab,
@@ -70,6 +72,7 @@ class ASRTask(LiteasrTask):
                     AudioFileDataset(
                         split=split,
                         data_dir=d_dir,
+                        delimiter=self.cfg.delimiter,
                         dataset_cfg=dataset_cfg,
                         postprocess_cfg=postprocess_cfg,
                         vocab=self.vocab,
@@ -84,7 +87,11 @@ class ASRTask(LiteasrTask):
 
     def inference(self, x, model: LiteasrModel):
         tokenids = model.inference(x)
-        return "".join(self.vocab.lookupi(tokenids, convert=True))
+        tokens = self.vocab.lookupi(tokenids, convert=True)
+        if self.cfg.delimiter is None:
+            return "".join(tokens)
+        else:
+            return self.cfg.delimiter.join(tokens)
 
     def save_model(self, model_name: str, model: LiteasrModel):
         model_path = os.sep.join((self.save_dir, model_name))

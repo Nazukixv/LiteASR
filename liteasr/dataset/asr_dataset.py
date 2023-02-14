@@ -26,6 +26,7 @@ class AudioFileDataset(LiteasrDataset):
         self,
         split: str,
         data_dir: str,
+        delimiter: Optional[str],
         dataset_cfg: Optional[DatasetConfig],
         postprocess_cfg: Optional[PostProcessConfig],
         vocab,
@@ -44,7 +45,7 @@ class AudioFileDataset(LiteasrDataset):
         _is_other = memory_save and self.dump_path.is_dir()
 
         _as = AudioSheet(data_dir)
-        _ts = TextSheet(data_dir, vocab=vocab)
+        _ts = TextSheet(data_dir, vocab=vocab, delimiter=delimiter)
         assert len(_as) == len(_ts)
 
         pb = ProgressBar(total=len(_as), title="loaded data")
